@@ -133,6 +133,9 @@ License for the specific language governing permissions and limitations under
 the License.
 ```
 
+# Warnings
+When you add new secret keys, you must refill modulus, exponent and the other encrypted keys, because you get different RSA KeyPair(private key and public key) every execution.
+
 [RSAHelper]:<https://github.com/Catherine22/RSAHelper>
 [MainActivity]: <https://github.com/Catherine22/SecuritySample/blob/master/app/src/main/jni/MainActivity.mk>
 [Android.mk]:<https://github.com/Catherine22/SecuritySample/blob/master/app/src/main/jni/Android.mk>     
