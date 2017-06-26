@@ -138,7 +138,7 @@ the License.
 ```
 
 [RSAHelper]:<https://github.com/Catherine22/RSAHelper>
-[MainActivity]: <https://github.com/Catherine22/SecuritySample/blob/master/app/src/main/jni/MainActivity.mk>
+[MainActivity]: <https://github.com/Catherine22/SecuritySample/blob/master/app/src/main/java/com/catherine/securitysample/MainActivity.java>
 [Android.mk]:<https://github.com/Catherine22/SecuritySample/blob/master/app/src/main/jni/Android.mk>     
 [Application.mk]:<https://github.com/Catherine22/SecuritySample/blob/master/app/src/main/jni/Application.mk>
 [NDK1]: https://github.com/Catherine22/MobileManager/blob/master/jni1.png  
