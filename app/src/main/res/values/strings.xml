@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">SecuritySample</string>
+    <string name="ATTEST_API_KEY">AIzaSyARRm-3LtzJkCET-QUDaMpC6vm3g9n8GF0</string>
 </resources>

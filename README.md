@@ -27,12 +27,12 @@ public static String decryptRSA(String message) throws NoSuchAlgorithmException,
 
     BigInteger m = new BigInteger(Base64.decode(MODULUS.getBytes(), Base64.DEFAULT));
     BigInteger e = new BigInteger(Base64.decode(EXPONENT.getBytes(), Base64.DEFAULT));
-    c2.init(Cipher.DECRYPT_MODE, converStringToPublicKey(m, e)); // 设置Cipher为解密工作模式，需要把Key传进去
+    c2.init(Cipher.DECRYPT_MODE, convertStringToPublicKey(m, e)); // 设置Cipher为解密工作模式，需要把Key传进去
     byte[] decryptedData = c2.doFinal(Base64.decode(message.getBytes(), Base64.DEFAULT));
     return new String(decryptedData, Algorithm.CHARSET);
 }
 
-public static Key converStringToPublicKey(BigInteger modulus, BigInteger exponent)
+public static Key convertStringToPublicKey(BigInteger modulus, BigInteger exponent)
         throws ClassNotFoundException, NoSuchAlgorithmException, InvalidKeySpecException {
     byte[] modulusByteArry = modulus.toByteArray();
     byte[] exponentByteArry = exponent.toByteArray();
