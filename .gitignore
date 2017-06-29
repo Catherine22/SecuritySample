@@ -7,3 +7,5 @@
 /build
 /captures
 .externalNativeBuild
+keystone.properties
+gradle.properties
