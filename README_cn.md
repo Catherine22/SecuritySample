@@ -54,12 +54,12 @@ Google分析不断的进步，因为分析了来自十万个以上不同网站�
 
 至于对于这个运行环境（装置或应用）要不要信任就是自定义的了（让自己的服务器决定）。
 
-API说明：
+API说明<br>
 nonce就是token，自己的服务器提供或是从装置随机生成。
 client：呼叫API就行了，取得JWS结果，并​​传送给自己的server。
 server：检查SSL的证书链（根证书是不是来自官方或可信任机构的），检查用来签名JWS的证书。
 
-JWS栏位说明
+JWS栏位说明<br>
 nonce：client随机生成或是来自自己服务器的token。
 timestamp：呼叫该API的时间戳。
 apkPackageName：包名是不是对的（这个正在跟服务器沟通的是不是自己的应用）。
@@ -68,7 +68,7 @@ apkDigestSHA256：apk的hash值。（这个APK有没有被篡改过）。
 ctsProfileMatch：这个装置是不是真正的、可信任的装置。
 basicIntegrity：过滤条件略比ctsProfileMatch宽容，告诉你这个装置是否兼容Android的，有没有被篡改过。
 
-实测数据
+实测数据<br>
 运行于LG Pro2得JWS为：
 ```JSON
 {"nonce":"XYFykVQX2mNyVDYZa4YAu8gBP6/3XWqg+zloYjhrg9M=",
