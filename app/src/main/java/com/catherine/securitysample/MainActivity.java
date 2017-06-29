@@ -66,17 +66,17 @@ public class MainActivity extends Activity implements SafetyNetUtils.Callback {
                         snu.verifyAppsNew();
                         break;
                     case 2:
+                        safetyNetHelper.enableConnectToGoogleServer(false);
                         safetyNetHelper.requestTest(MainActivity.this, new SafetyNetHelper.SafetyNetWrapperCallback() {
                             @Override
                             public void error(int errorCode, String errorMessage) {
-                                Log.d(TAG, errorCode + ":" + errorMessage);
+                                Log.e(TAG, errorCode + ":" + errorMessage);
                                 tv.setText(format(safetyNetHelper.getLastResponse()));
                             }
 
                             @Override
                             public void success(boolean ctsProfileMatch, boolean basicIntegrity) {
                                 Log.d(TAG, "SafetyNet req success: ctsProfileMatch:" + ctsProfileMatch + " and basicIntegrity, " + basicIntegrity);
-
                                 tv.setText(format(safetyNetHelper.getLastResponse()));
                             }
                         });

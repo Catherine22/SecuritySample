@@ -20,7 +20,7 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.List;
 
-//Two things you must know before starting!!
+//Two things you must know before you start developing!!
 //1. DO NOT add any safetyNet mata-data in your manifest
 //2. Use SafetyNetApi the deprecated class or you'd probably get 403 error by calling SafetyNet.getClient(context)
 
@@ -63,6 +63,7 @@ public class SafetyNetHelper implements GoogleApiClient.ConnectionCallbacks, Goo
 
     private String googleDeviceVerificationApiKey;
     private SafetyNetResponse lastResponse;
+    private boolean verifySignatureByGoogle;
 
     /**
      * @param googleDeviceVerificationApiKey used to validate safety net response see https://developer.android.com/google/play/safetynet/start.html#verify-compat-check
@@ -111,13 +112,17 @@ public class SafetyNetHelper implements GoogleApiClient.ConnectionCallbacks, Goo
         Log.d(TAG, "apkDigest:" + apkDigest);
     }
 
+    public void enableConnectToGoogleServer(boolean b) {
+        verifySignatureByGoogle = b;
+    }
+
     @Override
     public void onConnected(Bundle bundle) {
         Log.v(TAG, "Google play services connected");
-        runSaftyNetTest();
+        runSafetyNetTest(verifySignatureByGoogle);
     }
 
-    private void runSaftyNetTest() {
+    private void runSafetyNetTest(final boolean verifySignature) {
         Log.v(TAG, "running SafetyNet.API Test");
         requestNonce = generateOneTimeRequestNonce();
         requestTimestamp = System.currentTimeMillis();
@@ -133,38 +138,42 @@ public class SafetyNetHelper implements GoogleApiClient.ConnectionCallbacks, Goo
                                            final SafetyNetResponse response = parseJsonWebSignature(jwsResult);
                                            lastResponse = response;
 
-                                           //only need to validate the response if it says we pass
-                                           if (!response.isCtsProfileMatch() || !response.isBasicIntegrity()) {
+                                           if (!verifySignature)
                                                callback.success(response.isCtsProfileMatch(), response.isBasicIntegrity());
-                                               return;
-                                           } else {
-                                               //validate payload of the response
-                                               if (validateSafetyNetResponsePayload(response)) {
-                                                   if (!TextUtils.isEmpty(googleDeviceVerificationApiKey)) {
-                                                       //if the api key is set, run the AndroidDeviceVerifier
-                                                       AndroidDeviceVerifier androidDeviceVerifier = new AndroidDeviceVerifier(googleDeviceVerificationApiKey, jwsResult);
-                                                       androidDeviceVerifier.verify(new AndroidDeviceVerifier.AndroidDeviceVerifierCallback() {
-                                                           @Override
-                                                           public void error(String errorMsg) {
-                                                               callback.error(RESPONSE_ERROR_VALIDATING_SIGNATURE, "Response signature validation error: " + errorMsg);
-                                                           }
-
-                                                           @Override
-                                                           public void success(boolean isValidSignature) {
-                                                               if (isValidSignature) {
-                                                                   callback.success(response.isCtsProfileMatch(), response.isBasicIntegrity());
-                                                               } else {
-                                                                   callback.error(RESPONSE_FAILED_SIGNATURE_VALIDATION, "Response signature invalid");
-
-                                                               }
-                                                           }
-                                                       });
-                                                   } else {
-                                                       Log.w(TAG, "No google Device Verification ApiKey defined");
-                                                       callback.error(RESPONSE_FAILED_SIGNATURE_VALIDATION_NO_API_KEY, "No Google Device Verification ApiKey defined. Marking as failed. SafetyNet CtsProfileMatch: " + response.isCtsProfileMatch());
-                                                   }
+                                           else {
+                                               //only need to validate the response if it says we pass
+                                               if (!response.isCtsProfileMatch() || !response.isBasicIntegrity()) {
+                                                   callback.success(response.isCtsProfileMatch(), response.isBasicIntegrity());
+                                                   return;
                                                } else {
-                                                   callback.error(RESPONSE_VALIDATION_FAILED, "Response payload validation failed");
+                                                   //validate payload of the response
+                                                   if (validateSafetyNetResponsePayload(response)) {
+                                                       if (!TextUtils.isEmpty(googleDeviceVerificationApiKey)) {
+                                                           //if the api key is set, run the AndroidDeviceVerifier
+                                                           AndroidDeviceVerifier androidDeviceVerifier = new AndroidDeviceVerifier(googleDeviceVerificationApiKey, jwsResult);
+                                                           androidDeviceVerifier.verify(new AndroidDeviceVerifier.AndroidDeviceVerifierCallback() {
+                                                               @Override
+                                                               public void error(String errorMsg) {
+                                                                   callback.error(RESPONSE_ERROR_VALIDATING_SIGNATURE, "Response signature validation error: " + errorMsg);
+                                                               }
+
+                                                               @Override
+                                                               public void success(boolean isValidSignature) {
+                                                                   if (isValidSignature) {
+                                                                       callback.success(response.isCtsProfileMatch(), response.isBasicIntegrity());
+                                                                   } else {
+                                                                       callback.error(RESPONSE_FAILED_SIGNATURE_VALIDATION, "Response signature invalid");
+
+                                                                   }
+                                                               }
+                                                           });
+                                                       } else {
+                                                           Log.w(TAG, "No google Device Verification ApiKey defined");
+                                                           callback.error(RESPONSE_FAILED_SIGNATURE_VALIDATION_NO_API_KEY, "No Google Device Verification ApiKey defined. Marking as failed. SafetyNet CtsProfileMatch: " + response.isCtsProfileMatch());
+                                                       }
+                                                   } else {
+                                                       callback.error(RESPONSE_VALIDATION_FAILED, "Response payload validation failed");
+                                                   }
                                                }
                                            }
                                        }
