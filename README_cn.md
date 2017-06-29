@@ -70,6 +70,7 @@ basicIntegrity：过滤条件略比ctsProfileMatch宽容，告诉你这个装置
 
 实测数据
 运行于LG Pro2得JWS为：
+```JSON
 {"nonce":"XYFykVQX2mNyVDYZa4YAu8gBP6/3XWqg+zloYjhrg9M=",
 "timestampMs":1498718050630,
 "apkPackageName":"com.catherine.securitysample",
@@ -78,8 +79,10 @@ basicIntegrity：过滤条件略比ctsProfileMatch宽容，告诉你这个装置
 "extension":"CXGWLc3ajPR5",
 "apkCertificateDigestSha256":["9mLFS3eHWOBcHlA4MmODmfGvzgkbg2YSQ2z/ww9lCfw="],
 "basicIntegrity":true}​
+```
 
 运行于nox模拟器，所得JWS为：
+```JSON
 {"nonce":"3QVAX20nI/uir405vctoInSvgYYudRUFts7gLDDGCxE=​",
 "timestampMs":1498718484795​,
 "apkPackageName":"com.catherine.securitysample",
@@ -88,6 +91,7 @@ basicIntegrity：过滤条件略比ctsProfileMatch宽容，告诉你这个装置
 "extension":"CXGWLc3ajPR5",
 "apkCertificateDigestSha256":["9mLFS3eHWOBcHlA4MmODmfGvzgkbg2YSQ2z/ww9lCfw="],
 "basicIntegrity":false}​​
+```
 
 ### Safe browsing
 评估一个链接的危险程度，检查是不是有潜在危害，然后警告用户不要前往或分享。
@@ -98,4 +102,21 @@ API用法：
 SafetyNetApi.lookupUri(...)
 传入一个URL，Safe browsing会告诉你
 
-[gpv.png]: https://github.com/Catherine22/MobileManager/blob/master/gpv.png
+# License
+
+```
+Copyright 2017 Catherine Chen (https://github.com/Catherine22)
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+```
+[gpv.png]: https://github.com/Catherine22/SecuritySample/blob/master/gpv.png

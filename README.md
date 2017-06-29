@@ -217,7 +217,7 @@ I run this app on a real device and the nox monitor, I got two different JWS res
 "basicIntegrity":false}​​
 ```
 
-If you want to read more about google security services for Android, you can watch [Google Security Services for Android : Mobile Protections at Google Scale], the youtube video. Or you could see my note, they are almost the same.
+If you want to read more about google security services for Android, you can watch [Google Security Services for Android : Mobile Protections at Google Scale], the youtube video. Or you could see my note [README_cn], they are almost the same.
 
 # Warning
 When you add new secret keys, you must refill modulus, exponent and the other encrypted keys, because you get different RSA KeyPair(private key and public key) every execution.
@@ -249,3 +249,4 @@ the License.
 [NDK1]: https://github.com/Catherine22/MobileManager/blob/master/jni1.png  
 [safetynethelper]:<https://github.com/scottyab/safetynethelper>
 [Google Security Services for Android : Mobile Protections at Google Scale]:<https://www.youtube.com/watch?v=exU1f_UBXGk>
+[README_cn]:<https://github.com/Catherine22/SecuritySample/blob/master/app/src/main/jni/README_cn.md>     
