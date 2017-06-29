@@ -34,7 +34,7 @@ Google分析不断的进步，因为分析了来自十万个以上不同网站�
  - 监督应用的行为并且每日回馈google，能远端阻止恶意行为。
 
 ### Developer APIs
- - google开放非开发者的APIs，用来审查运行环境的安全状态，比如SafetyNet。
+ - google开放给开发者的APIs，用来审查运行环境的安全状态，比如SafetyNet。
 
 ### Android Device Manager
  - 让用户能远端甚至通过Android wear定位装置、作响、锁屏、清除账户信息。
