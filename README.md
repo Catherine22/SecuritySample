@@ -1,5 +1,6 @@
 # SecuritySample
 Hiding encrypted secret API keys in C/C++ code and decrypting them with Java code.
+
 Using SafetyNet Attestation API.
 
 # Introduction
@@ -249,4 +250,4 @@ the License.
 [NDK1]: https://github.com/Catherine22/MobileManager/blob/master/jni1.png  
 [safetynethelper]:<https://github.com/scottyab/safetynethelper>
 [Google Security Services for Android : Mobile Protections at Google Scale]:<https://www.youtube.com/watch?v=exU1f_UBXGk>
-[README_cn]:<https://github.com/Catherine22/SecuritySample/blob/master/app/src/main/jni/README_cn.md>     
+[README_cn]:<https://github.com/Catherine22/SecuritySample/blob/master/README_cn.md>     
