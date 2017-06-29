@@ -13,9 +13,9 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <meta-data
-            android:name="com.google.android.safetynet.ATTEST_API_KEY"
-            android:value="@string/ATTEST_API_KEY" />
+        <!--<meta-data-->
+            <!--android:name="com.google.android.safetynet.ATTEST_API_KEY"-->
+            <!--android:value="${safetynet_api_key}" />-->
 
         <activity android:name=".MainActivity">
             <intent-filter>

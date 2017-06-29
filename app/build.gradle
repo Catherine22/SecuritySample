@@ -37,9 +37,11 @@ android {
         release {
             minifyEnabled false
             signingConfig signingConfigs.config
+            manifestPlaceholders = [safetynet_api_key: "${safetynet_api_key}"]
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
         debug {
+            manifestPlaceholders = [safetynet_api_key: "${safetynet_api_key}"]
             signingConfig signingConfigs.config
         }
     }
@@ -53,6 +55,10 @@ android {
         targetCompatibility JavaVersion.VERSION_1_7
     }
     sourceSets { main { jni.srcDirs = ['src/main/jni', 'src/main/jni/'] } }
+
+    defaultConfig {
+        buildConfigField("String", "API_KEY", "\"${safetynet_api_key}\"")
+    }
 }
 
 dependencies {

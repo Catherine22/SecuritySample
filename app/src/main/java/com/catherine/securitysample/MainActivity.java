@@ -2,8 +2,6 @@ package com.catherine.securitysample;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
@@ -12,22 +10,9 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.common.api.CommonStatusCodes;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.common.api.Status;
-import com.google.android.gms.safetynet.HarmfulAppsData;
-import com.google.android.gms.safetynet.SafetyNet;
-import com.google.android.gms.safetynet.SafetyNetApi;
-import com.google.android.gms.safetynet.SafetyNetClient;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
@@ -36,21 +21,19 @@ import java.security.Key;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPublicKeySpec;
-import java.util.List;
-import java.util.Random;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
-public class MainActivity extends Activity implements GoogleApiClient.ConnectionCallbacks {
+public class MainActivity extends Activity implements SafetyNetUtils.Callback {
     private ListView lv_features;
     private TextView tv;
-    private GoogleApiClient googleApiClient;
+    private SafetyNetUtils snu;
+    private SafetyNetHelper safetyNetHelper;
     private final String[] titles = {"Get encrypted data via NDK", "Verify apps", "Attestation"};
     private final static String TAG = "MainActivity";
     private final static String MODULUS = "AKfszhN0I/O12wcJ+r4wX0Im//5+pGeSFCXo4jOH18khVsspwgDaZgUJRxYIeK87kDOmk8U1j01Rsx2UFlThMjfwT9oliR1K/QihIujN7dgLSnBHh8wWXBI+P+hZq01uF2qrvWZQ+t2JySVBh7DO9uXxdjHrOLou97w3pjZzU4zn";
@@ -66,7 +49,13 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initView();
-        initComponent();
+        snu = new SafetyNetUtils(MainActivity.this, MainActivity.this);
+        safetyNetHelper = new SafetyNetHelper(BuildConfig.API_KEY, MainActivity.this);
+        Log.d(TAG, "AndroidAPIKEY: " + Utils.getSigningKeyFingerprint(this) + ";" + getPackageName());
+        if (ConnectionResult.SUCCESS != GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(this)) {
+            Log.e(TAG, "GooglePlayServices is not available on this device.\n\nThis SafetyNet test will not work");
+            tv.setText("GooglePlayServices is not available on this device.\n\nThis SafetyNet test will not work");
+        }
         lv_features.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -98,95 +87,27 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
                         }
                         break;
                     case 1:
-                        SafetyNet.getClient(MainActivity.this)
-                                .isVerifyAppsEnabled()
-                                .addOnCompleteListener(new OnCompleteListener<SafetyNetApi.VerifyAppsUserResponse>() {
-                                    @Override
-                                    public void onComplete(Task<SafetyNetApi.VerifyAppsUserResponse> task) {
-                                        if (task.isSuccessful()) {
-                                            SafetyNetApi.VerifyAppsUserResponse result = task.getResult();
-                                            if (result.isVerifyAppsEnabled()) {
-                                                sb.append("The Verify Apps feature is enabled.\n");
-                                            } else {
-                                                sb.append("The Verify Apps feature is disabled.\n");
-                                            }
-                                        } else {
-                                            sb.append("A general error occurred.\n");
-                                            Log.e(TAG, "A general error occurred.");
-                                        }
-                                        tv.setText(sb.toString());
-                                    }
-                                });
-
-                        SafetyNet.getClient(MainActivity.this)
-                                .enableVerifyApps()
-                                .addOnCompleteListener(new OnCompleteListener<SafetyNetApi.VerifyAppsUserResponse>() {
-                                    @Override
-                                    public void onComplete(Task<SafetyNetApi.VerifyAppsUserResponse> task) {
-                                        if (task.isSuccessful()) {
-                                            SafetyNetApi.VerifyAppsUserResponse result = task.getResult();
-                                            if (result.isVerifyAppsEnabled()) {
-                                                sb.append("The user gave consent to enable the Verify Apps feature.\n");
-                                            } else {
-                                                sb.append("The user didn't give consent to enable the Verify Apps feature.\n");
-                                            }
-                                        } else {
-                                            sb.append("A general error occurred.\n");
-                                            Log.e(TAG, "A general error occurred.");
-                                        }
-                                        tv.setText(sb.toString());
-                                    }
-                                });
-
-                        SafetyNet.getClient(MainActivity.this)
-                                .listHarmfulApps()
-                                .addOnCompleteListener(new OnCompleteListener<SafetyNetApi.HarmfulAppsResponse>() {
-                                    @Override
-                                    public void onComplete(Task<SafetyNetApi.HarmfulAppsResponse> task) {
-                                        sb.append("Received listHarmfulApps() result\n");
-
-                                        if (task.isSuccessful()) {
-                                            SafetyNetApi.HarmfulAppsResponse result = task.getResult();
-                                            long scanTimeMs = result.getLastScanTimeMs();
-                                            List<HarmfulAppsData> appList = result.getHarmfulAppsList();
-                                            if (appList.isEmpty()) {
-                                                sb.append("There are no known potentially harmful apps installed.\n");
-                                            } else {
-                                                sb.append("Potentially harmful apps are installed!\n");
-
-                                                for (HarmfulAppsData harmfulApp : appList) {
-                                                    Log.e(TAG, "Information about a harmful app:");
-                                                    sb.append("Information about a harmful app:\n");
-                                                    Log.e(TAG,
-                                                            "  APK: " + harmfulApp.apkPackageName);
-                                                    sb.append("  APK: " + harmfulApp.apkPackageName + "\n");
-                                                    Log.e(TAG,
-                                                            "  SHA-256: " + harmfulApp.apkSha256);
-                                                    sb.append("  SHA-256: " + harmfulApp.apkSha256 + "\n");
-
-                                                    // Categories are defined in VerifyAppsConstants.
-                                                    Log.e(TAG,
-                                                            "  Category: " + harmfulApp.apkCategory);
-                                                    sb.append("  Category: " + harmfulApp.apkCategory + "\n");
-                                                }
-                                            }
-                                        } else {
-                                            sb.append("An error occurred. Call isVerifyAppsEnabled() to ensure that the user has consented.\n");
-                                            Log.d(TAG, "An error occurred. Call isVerifyAppsEnabled() to ensure that the user has consented.");
-                                        }
-                                        tv.setText(sb.toString());
-                                    }
-                                });
-
+                        snu.verifyAppsNew();
                         break;
                     case 2:
-                        String nonceData = "Safety Net Sample: " + System.currentTimeMillis();
-                        byte[] nonce = getRequestNonce(nonceData);// Should be at least 16 bytes in length.
-                        tv.setText(Base64.encodeToString(nonce, Base64.DEFAULT));
-                        SafetyNetClient client = SafetyNet.getClient(MainActivity.this);
-                        Task<SafetyNetApi.AttestationResponse> task = client.attest(nonce, getString(R.string.ATTEST_API_KEY));
-                        task.addOnSuccessListener(MainActivity.this, mSuccessListener).addOnFailureListener(MainActivity.this, mFailureListener);
+//                        snu.attestationNew();
+                        safetyNetHelper.requestTest(MainActivity.this, new SafetyNetHelper.SafetyNetWrapperCallback() {
+                            @Override
+                            public void error(int errorCode, String errorMessage) {
+                                Log.d(TAG, errorCode + ":" + errorMessage);
+                            }
 
+                            @Override
+                            public void success(boolean ctsProfileMatch, boolean basicIntegrity) {
+                                Log.d(TAG, "SafetyNet req success: ctsProfileMatch:" + ctsProfileMatch + " and basicIntegrity, " + basicIntegrity);
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        tv.setText(safetyNetHelper.getLastResponse().toString());
+                                    }
+                                });
+                            }
+                        });
                         break;
                 }
             }
@@ -199,13 +120,6 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         tv = (TextView) findViewById(R.id.sample_text);
         lv_features = (ListView) findViewById(R.id.lv_features);
         lv_features.setAdapter(new ArrayAdapter<>(MainActivity.this, R.layout.activity_main_item, R.id.tv_title, titles));
-    }
-
-    private void initComponent() {
-        googleApiClient = new GoogleApiClient.Builder(this)
-                .addApi(SafetyNet.API)
-                .addConnectionCallbacks(MainActivity.this)
-                .build();
     }
 
     /**
@@ -263,95 +177,15 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         return publicKey;
     }
 
-    private final Random mRandom = new SecureRandom();
-
-    /**
-     * Generates a 16-byte nonce with additional data.
-     * The nonce should also include additional information, such as a user id or any other details
-     * you wish to bind to this attestation. Here you can provide a String that is included in the
-     * nonce after 24 random bytes. During verification, extract this data again and check it
-     * against the request that was made with this nonce.
-     */
-    private byte[] getRequestNonce(String data) {
-        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-        byte[] bytes = new byte[24];
-        mRandom.nextBytes(bytes);
-        try {
-            byteStream.write(bytes);
-            byteStream.write(data.getBytes());
-        } catch (IOException e) {
-            return null;
-        }
-
-        return byteStream.toByteArray();
-    }
-
     /**
      * A native method that is implemented by the 'native-lib' native library,
      * which is packaged with this application.
      */
     public native String[] getAuthChain(String key);
 
-    @Override
-    public void onConnected(@Nullable Bundle bundle) {
-        String logs = bundle == null ? "" : bundle.toString();
-        Log.d(TAG, "onConnected " + logs);
-    }
 
     @Override
-    public void onConnectionSuspended(int i) {
-        Log.d(TAG, "onConnectionSuspended" + i);
+    public void onResponse(String message) {
+        tv.setText(message);
     }
-
-    /**
-     * Called after successfully communicating with the SafetyNet API.
-     * The #onSuccess callback receives an
-     * {@link com.google.android.gms.safetynet.SafetyNetApi.AttestationResponse} that contains a
-     * JwsResult with the attestation result.
-     */
-    private OnSuccessListener<SafetyNetApi.AttestationResponse> mSuccessListener =
-            new OnSuccessListener<SafetyNetApi.AttestationResponse>() {
-                @Override
-                public void onSuccess(SafetyNetApi.AttestationResponse attestationResponse) {
-                    /*
-                     Successfully communicated with SafetyNet API.
-                     Use result.getJwsResult() to get the signed result data. See the server
-                     component of this sample for details on how to verify and parse this result.
-                     */
-                    String mResult = attestationResponse.getJwsResult();
-                    Log.d(TAG, "Success! SafetyNet result:\n" + mResult + "\n");
-                    tv.setText("Success! SafetyNet result:\n" + mResult + "\n");
-                        /*
-                         TODO(developer): Forward this result to your server together with
-                         the nonce for verification.
-                         You can also parse the JwsResult locally to confirm that the API
-                         returned a response by checking for an 'error' field first and before
-                         retrying the request with an exponential backoff.
-                         NOTE: Do NOT rely on a local, client-side only check for security, you
-                         must verify the response on a remote server!
-                        */
-                }
-            };
-
-    /**
-     * Called when an error occurred when communicating with the SafetyNet API.
-     */
-    private OnFailureListener mFailureListener = new OnFailureListener() {
-        @Override
-        public void onFailure(@NonNull Exception e) {
-            // An error occurred while communicating with the service.
-
-            if (e instanceof ApiException) {
-                // An error with the Google Play Services API contains some additional details.
-                ApiException apiException = (ApiException) e;
-                Log.e(TAG, "Error: " +
-                        CommonStatusCodes.getStatusCodeString(apiException.getStatusCode()) + ": " +
-                        apiException.getStatusMessage());
-            } else {
-                // A different, unknown type of error occurred.
-                Log.e(TAG, "ERROR! " + e.getMessage());
-            }
-
-        }
-    };
 }
