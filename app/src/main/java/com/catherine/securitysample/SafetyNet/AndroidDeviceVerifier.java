@@ -1,4 +1,4 @@
-package com.catherine.securitysample;
+package com.catherine.securitysample.SafetyNet;
 
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;

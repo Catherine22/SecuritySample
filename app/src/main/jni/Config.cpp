@@ -11,7 +11,7 @@ extern "C" {
 
 
     JNIEXPORT jobjectArray JNICALL
-    Java_com_catherine_securitysample_MainActivity_getAuthChain(JNIEnv *env, jobject instance, jstring key) {
+    Java_com_catherine_securitysample_JNIHelper_getAuthChain(JNIEnv *env, jobject instance, jstring key) {
 
     jobjectArray valueArray = (jobjectArray)env->NewObjectArray(5, env->FindClass("java/lang/String"), 0);
 

@@ -1,4 +1,4 @@
-package com.catherine.securitysample;
+package com.catherine.securitysample.SafetyNet;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -8,19 +8,21 @@ import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 
+import com.catherine.securitysample.Utils;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.safetynet.SafetyNet;
 import com.google.android.gms.safetynet.SafetyNetApi;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.List;
 
+//Two things you must know before starting!!
+//1. DO NOT add any safetyNet mata-data in your manifest
+//2. Use SafetyNetApi the deprecated class or you'd probably get 403 error by calling SafetyNet.getClient(context)
 
 /**
  * Simple wrapper to request google Play services - SafetyNet test
@@ -61,13 +63,11 @@ public class SafetyNetHelper implements GoogleApiClient.ConnectionCallbacks, Goo
 
     private String googleDeviceVerificationApiKey;
     private SafetyNetResponse lastResponse;
-    private Context context;
 
     /**
      * @param googleDeviceVerificationApiKey used to validate safety net response see https://developer.android.com/google/play/safetynet/start.html#verify-compat-check
      */
-    public SafetyNetHelper(String googleDeviceVerificationApiKey, Context context) {
-        this.context = context;
+    public SafetyNetHelper(String googleDeviceVerificationApiKey) {
         secureRandom = new SecureRandom();
         if (TextUtils.isEmpty(googleDeviceVerificationApiKey)) {
             Log.w(TAG, "Google Device Verification Api Key not defined, cannot properly validate safety net response without it. See https://developer.android.com/google/play/safetynet/start.html#verify-compat-check");
@@ -121,56 +121,6 @@ public class SafetyNetHelper implements GoogleApiClient.ConnectionCallbacks, Goo
         Log.v(TAG, "running SafetyNet.API Test");
         requestNonce = generateOneTimeRequestNonce();
         requestTimestamp = System.currentTimeMillis();
-//        SafetyNet.getClient(context).attest(requestNonce, googleDeviceVerificationApiKey)
-//                .addOnSuccessListener(new OnSuccessListener<SafetyNetApi.AttestationResponse>() {
-//                    @Override
-//                    public void onSuccess(SafetyNetApi.AttestationResponse attestationResponse) {
-//                        final String jwsResult = attestationResponse.getJwsResult();
-//                        final SafetyNetResponse response = parseJsonWebSignature(jwsResult);
-//                        lastResponse = response;
-//
-//                        //only need to validate the response if it says we pass
-//                        if (!response.isCtsProfileMatch() || !response.isBasicIntegrity()) {
-//                            callback.success(response.isCtsProfileMatch(), response.isBasicIntegrity());
-//                            return;
-//                        } else {
-//                            //validate payload of the response
-//                            if (validateSafetyNetResponsePayload(response)) {
-//                                if (!TextUtils.isEmpty(googleDeviceVerificationApiKey)) {
-//                                    //if the api key is set, run the AndroidDeviceVerifier
-//                                    AndroidDeviceVerifier androidDeviceVerifier = new AndroidDeviceVerifier(googleDeviceVerificationApiKey, jwsResult);
-//                                    androidDeviceVerifier.verify(new AndroidDeviceVerifier.AndroidDeviceVerifierCallback() {
-//                                        @Override
-//                                        public void error(String errorMsg) {
-//                                            callback.error(RESPONSE_ERROR_VALIDATING_SIGNATURE, "Response signature validation error: " + errorMsg);
-//                                        }
-//
-//                                        @Override
-//                                        public void success(boolean isValidSignature) {
-//                                            if (isValidSignature) {
-//                                                callback.success(response.isCtsProfileMatch(), response.isBasicIntegrity());
-//                                            } else {
-//                                                callback.error(RESPONSE_FAILED_SIGNATURE_VALIDATION, "Response signature invalid");
-//
-//                                            }
-//                                        }
-//                                    });
-//                                } else {
-//                                    Log.w(TAG, "No google Device Verification ApiKey defined");
-//                                    callback.error(RESPONSE_FAILED_SIGNATURE_VALIDATION_NO_API_KEY, "No Google Device Verification ApiKey defined. Marking as failed. SafetyNet CtsProfileMatch: " + response.isCtsProfileMatch());
-//                                }
-//                            } else {
-//                                callback.error(RESPONSE_VALIDATION_FAILED, "Response payload validation failed");
-//                            }
-//                        }
-//                    }
-//                })
-//                .addOnFailureListener(new OnFailureListener() {
-//                    @Override
-//                    public void onFailure(@NonNull Exception e) {
-//                        callback.error(SAFETY_NET_API_REQUEST_UNSUCCESSFUL, "Call to SafetyNetApi.attest was not successful. " + e.toString());
-//                    }
-//                });
         SafetyNet.SafetyNetApi.attest(googleApiClient, requestNonce)
                 .setResultCallback(new ResultCallback<SafetyNetApi.AttestationResult>() {
                                        @Override

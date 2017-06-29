@@ -42,7 +42,6 @@ android {
         }
         debug {
             manifestPlaceholders = [safetynet_api_key: "${safetynet_api_key}"]
-            signingConfig signingConfigs.config
         }
     }
     externalNativeBuild {

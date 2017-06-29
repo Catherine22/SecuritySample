@@ -1,4 +1,4 @@
-package com.catherine.securitysample;
+package com.catherine.securitysample.SafetyNet;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
