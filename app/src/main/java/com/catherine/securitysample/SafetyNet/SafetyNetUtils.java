@@ -4,16 +4,23 @@ import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Base64;
 import android.util.Log;
 
+import com.catherine.securitysample.Utils;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
 import com.google.android.gms.safetynet.HarmfulAppsData;
 import com.google.android.gms.safetynet.SafetyNet;
 import com.google.android.gms.safetynet.SafetyNetApi;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
+import org.json.JSONException;
+
+import java.security.SecureRandom;
 import java.util.List;
 
 /**
@@ -26,10 +33,14 @@ public class SafetyNetUtils {
     private final static String TAG = "SafetyNetUtils";
     private Context ctx;
     private Callback callback;
+    private byte[] requestNonce;
+    private String API_KEY;
+    private final SecureRandom secureRandom;
     private GoogleApiClient googleApiClient;
 
-    public SafetyNetUtils(Context ctx, Callback callback) {
+    public SafetyNetUtils(Context ctx, @Nullable String API_KEY, Callback callback) {
         this.ctx = ctx;
+        this.API_KEY = API_KEY;
         this.callback = callback;
         googleApiClient = new GoogleApiClient.Builder(ctx)
                 .addApi(SafetyNet.API)
@@ -37,13 +48,16 @@ public class SafetyNetUtils {
                 .addOnConnectionFailedListener(googleApiConnectionFailedListener)
                 .build();
         googleApiClient.connect();
+        secureRandom = new SecureRandom();
     }
 
     public interface Callback {
         void onResponse(String message);
+
+        void onFail(ErrorMessage code, String message);
     }
 
-    public void verifyAppsNew() {
+    public void verifyApps() {
         final StringBuilder sb = new StringBuilder();
         SafetyNet.getClient(ctx)
                 .isVerifyAppsEnabled()
@@ -94,7 +108,6 @@ public class SafetyNetUtils {
 
                         if (task.isSuccessful()) {
                             SafetyNetApi.HarmfulAppsResponse result = task.getResult();
-                            long scanTimeMs = result.getLastScanTimeMs();
                             List<HarmfulAppsData> appList = result.getHarmfulAppsList();
                             if (appList.isEmpty()) {
                                 sb.append("There are no known potentially harmful apps installed.\n");
@@ -124,6 +137,63 @@ public class SafetyNetUtils {
                         callback.onResponse(sb.toString());
                     }
                 });
+    }
+
+    public void requestAttestation(final boolean verifyJWSResponse) {
+        Log.d(TAG, String.format("ApkCertificateDigests:%s", Utils.calcApkCertificateDigests(ctx, ctx.getPackageName())));
+        Log.d(TAG, String.format("ApkDigest:%s", Utils.calcApkDigest(ctx)));
+        Log.v(TAG, "running SafetyNet.API Test");
+        requestNonce = generateOneTimeRequestNonce();
+        Log.d(TAG, "Nonce:" + Base64.encodeToString(requestNonce, Base64.DEFAULT));
+        SafetyNet.SafetyNetApi.attest(googleApiClient, requestNonce)
+                .setResultCallback(new ResultCallback<SafetyNetApi.AttestationResult>() {
+
+                    @Override
+                    public void onResult(@NonNull SafetyNetApi.AttestationResult attestationResult) {
+                        Status status = attestationResult.getStatus();
+                        boolean isSuccess = status.isSuccess();
+                        if (!isSuccess)
+                            callback.onFail(ErrorMessage.SAFETY_NET_API_NOT_WORK, ErrorMessage.SAFETY_NET_API_NOT_WORK.name());
+                        else {
+                            try {
+                                final String jwsResult = attestationResult.getJwsResult();
+                                final AttestationResult response = new AttestationResult(jwsResult);
+                                if (!verifyJWSResponse) {
+                                    callback.onResponse(response.getFormattedString());
+                                } else {
+                                    if (API_KEY == null)
+                                        callback.onFail(ErrorMessage.NULL_API_KEY, ErrorMessage.NULL_API_KEY.name());
+                                    else {
+                                        AndroidDeviceVerifier androidDeviceVerifier = new AndroidDeviceVerifier(API_KEY, jwsResult);
+                                        androidDeviceVerifier.verify(new AndroidDeviceVerifier.AndroidDeviceVerifierCallback() {
+                                            @Override
+                                            public void error(String errorMsg) {
+                                                callback.onFail(ErrorMessage.FAILED_TO_CALL_GOOGLE_API_SERVICES, ErrorMessage.FAILED_TO_CALL_GOOGLE_API_SERVICES.name() + ":" + errorMsg);
+                                            }
+
+                                            @Override
+                                            public void success(boolean isValidSignature) {
+                                                if (isValidSignature)
+                                                    callback.onResponse("isValidSignature true\n\n" + response.getFormattedString());
+                                                else
+                                                    callback.onFail(ErrorMessage.ERROR_VALID_SIGNATURE, ErrorMessage.ERROR_VALID_SIGNATURE.name());
+                                            }
+                                        });
+                                    }
+                                }
+                            } catch (JSONException e) {
+                                callback.onFail(ErrorMessage.EXCEPTION, e.getMessage());
+
+                            }
+                        }
+                    }
+                });
+    }
+
+    private byte[] generateOneTimeRequestNonce() {
+        byte[] nonce = new byte[32];
+        secureRandom.nextBytes(nonce);
+        return nonce;
     }
 
     private GoogleApiClient.ConnectionCallbacks googleApiConnectionCallbacks = new GoogleApiClient.ConnectionCallbacks() {
