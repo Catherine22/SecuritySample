@@ -33,7 +33,6 @@ public class SafetyNetUtils {
     private final static String TAG = "SafetyNetUtils";
     private Context ctx;
     private Callback callback;
-    private byte[] requestNonce;
     private String API_KEY;
     private final SecureRandom secureRandom;
     private GoogleApiClient googleApiClient;
@@ -143,7 +142,7 @@ public class SafetyNetUtils {
         Log.d(TAG, String.format("ApkCertificateDigests:%s", Utils.calcApkCertificateDigests(ctx, ctx.getPackageName())));
         Log.d(TAG, String.format("ApkDigest:%s", Utils.calcApkDigest(ctx)));
         Log.v(TAG, "running SafetyNet.API Test");
-        requestNonce = generateOneTimeRequestNonce();
+        byte[] requestNonce = generateOneTimeRequestNonce();
         Log.d(TAG, "Nonce:" + Base64.encodeToString(requestNonce, Base64.DEFAULT));
         SafetyNet.SafetyNetApi.attest(googleApiClient, requestNonce)
                 .setResultCallback(new ResultCallback<SafetyNetApi.AttestationResult>() {

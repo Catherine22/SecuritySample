@@ -125,14 +125,17 @@ public native String[] getAuthChain(String key);
 ```
 
 # Instruction Part2
-**Two things you must know before you start developing.**
-1. DO NOT add any safetyNet meta-data in your manifest
-2. Use SafetyNetApi the deprecated class or you'd probably get 403 error by calling SafetyNet.getClient(context)
+**Things you must know before you start developing.**
+1. Use SafetyNetApi the deprecated class or you'd probably get 403 error by calling SafetyNet.getClient(context)
+2. JWS (JSON Web Token) contains the signature and the body, your environment information is refer to the body (or the payload data).
+3. There are two APIs you might need - SafetyNet API and Android device verification API. You get your device and app information with SafetyNet API, and check whether the information is truthful with another. Then let your server decide the next step (like shutting down the app or something).
 
-- I copied code from [safetynethelper] to [SafetyNet].
-
-## Step1. Get API keys from google develop console
-- General API key here: https://console.developers.google.com/, and don't forget to add and enable "Android Device Verification API"
+## Step1. Get API keys from google develop console (optional)
+- **You can skip this step if you don't verify your attestation response with google APIs. Or you can also validate the SSL certificate chain by yourself. Google highly recommends you to check your JWS statement.**
+- **What "Android Device Verification API" dose is only checking the JWS signature, its response has nothing to do with the Android environments in which your apps run. (The JSON payload)**
+- General API key here: https://console.developers.google.com/, and don't forget to add and enable "Android Device Verification API".
+- Make sure the API key you post to "Android Device Verification API" is unrestricted.
+- There are daily quotas of "Android Device Verification API".
 
 - In gradle.porpeties, add your google API key
 ```
@@ -149,78 +152,119 @@ android {
 
 ```
 
-- Ignore manifest
+- DO NOT add any safetyNet meta-data in your manifest
 ```xml
 <!--<meta-data-->
     <!--android:name="com.google.android.safetynet.ATTEST_API_KEY"-->
     <!--android:value="${safetynet_api_key}" />-->
 ```
 
-## Step2.
+
+## Step2. Build GoogleApiClient and call SafetyNet APIs
 ```java
 SafetyNetHelper safetyNetHelper = new SafetyNetHelper(BuildConfig.API_KEY);
+GoogleApiClient googleApiClient = new GoogleApiClient.Builder(contex)
+        .addApi(SafetyNet.API)
+        .addConnectionCallbacks(googleApiConnectionCallbacks)
+        .addOnConnectionFailedListener(googleApiConnectionFailedListener)
+        .build();
+//Don't forget to connect!
+googleApiClient.connect();
+```
 
-//In the case, you can let your server decide how to deal with false ctsProfileMatch situation.
-safetyNetHelper.enableConnectToGoogleServer(false);
-safetyNetHelper.requestTest(MainActivity.this, new SafetyNetHelper.SafetyNetWrapperCallback() {
-    @Override
-    public void error(int errorCode, String errorMessage) {
-        Log.e(TAG, errorCode + ":" + errorMessage);
-        Log.d(TAG, format(safetyNetHelper.getLastResponse()));
-    }
+```Java
+byte[] requestNonce = generateOneTimeRequestNonce();
+Log.d(TAG, "Nonce:" + Base64.encodeToString(requestNonce, Base64.DEFAULT));
+SafetyNet.SafetyNetApi.attest(googleApiClient, requestNonce)
+        .setResultCallback(new ResultCallback<SafetyNetApi.AttestationResult>() {
 
-    @Override
-    public void success(boolean ctsProfileMatch, boolean basicIntegrity) {
-        Log.d(TAG, "SafetyNet req success: ctsProfileMatch:" + ctsProfileMatch + " and basicIntegrity, " + basicIntegrity);
-        Log.d(TAG, format(safetyNetHelper.getLastResponse()));
-    }
-});
+            @Override
+            public void onResult(@NonNull SafetyNetApi.AttestationResult attestationResult) {
+                Status status = attestationResult.getStatus();
+                boolean isSuccess = status.isSuccess();
+                if (!isSuccess)
+                    callback.onFail(ErrorMessage.SAFETY_NET_API_NOT_WORK, ErrorMessage.SAFETY_NET_API_NOT_WORK.name());
+                else {
+                    try {
+                        final String jwsResult = attestationResult.getJwsResult();
+                        final AttestationResult response = new AttestationResult(jwsResult);
+                        if (!verifyJWSResponse) {
+                            callback.onResponse(response.getFormattedString());
+                        } else {
+                            if (API_KEY == null)
+                                callback.onFail(ErrorMessage.NULL_API_KEY, ErrorMessage.NULL_API_KEY.name());
+                            else {
+                                AndroidDeviceVerifier androidDeviceVerifier = new AndroidDeviceVerifier(API_KEY, jwsResult);
+                                androidDeviceVerifier.verify(new AndroidDeviceVerifier.AndroidDeviceVerifierCallback() {
+                                    @Override
+                                    public void error(String errorMsg) {
+                                        callback.onFail(ErrorMessage.FAILED_TO_CALL_GOOGLE_API_SERVICES, ErrorMessage.FAILED_TO_CALL_GOOGLE_API_SERVICES.name() + ":" + errorMsg);
+                                    }
 
-private String format(SafetyNetResponse r) {
-    StringBuilder sb = new StringBuilder();
-    sb.append("[");
-    for (String s : r.getApkCertificateDigestSha256()) {
-        sb.append(s);
-        sb.append(", ");
-    }
-    sb.delete(sb.length() - 2, sb.length());
-    sb.append("]");
-    SimpleDateFormat newFormat = new SimpleDateFormat("yyyy/MM/dd hh:mm:ss", Locale.TAIWAN);
-    String formattedTime = newFormat.format(r.getTimestampMs());
-    return String.format("Request Time:\n%s\n\nNonce:\n%s\n\nPackageName:\n%s\n\nApkCertificateDigestSha256:\n%s\n\nApkDigestSha256:\n%s\n\nctsProfileMatch:\n%s\n\nbasicIntegrity:\n%s", formattedTime, r.getNonce(), r.getApkPackageName(), sb.toString(), r.getApkDigestSha256(), r.isCtsProfileMatch(), r.isBasicIntegrity());
+                                    @Override
+                                    public void success(boolean isValidSignature) {
+                                        if (isValidSignature)
+                                            callback.onResponse("isValidSignature true\n\n" + response.getFormattedString());
+                                        else
+                                            callback.onFail(ErrorMessage.ERROR_VALID_SIGNATURE, ErrorMessage.ERROR_VALID_SIGNATURE.name());
+                                    }
+                                });
+                            }
+                        }
+                    } catch (JSONException e) {
+                        callback.onFail(ErrorMessage.EXCEPTION, e.getMessage());
+
+                    }
+                }
+            }
+        });
+```
+
+- [SafetyNetUtils]
+
+## Step3. Call Attestation API to retrieve JWS message
+The JWS payloads I got by running this app on the real device and the nox monitor are a little different.
+
+- On my mobile phone, ctsProfileMatch and basicIntegrity were both true.
+```JSON
+{
+  "nonce":"pUkGirEXYOQefux33VWeSEmR0kBkLNGQaiQiZvE3VAc=",
+  "timestampMs":1498814112718,"apkPackageName":"com.catherine.securitysample",
+  "apkDigestSha256":"FPgrs1x05EaZiJkfKaitzEXTazg+GDDqYtbR5XyJiJE=",
+  "ctsProfileMatch":true,
+  "extension":"CbRP9k08+pZE",
+  "apkCertificateDigestSha256":["9mLFS3eHWOBcHlA4MmODmfGvzgkbg2YSQ2z/ww9lCfw="],
+  "basicIntegrity":true
+}
+
+```
+
+- On nox monitor, ctsProfileMatch and basicIntegrity were both false.
+```JSON
+{
+  "nonce":"/Md+iYxxW14bSMFFdN6rosLSINPTIvuhv12GJMgeP08=",
+  "timestampMs":1498814181775,
+  "apkPackageName":"com.catherine.securitysample",
+  "apkDigestSha256":"+9Ql8SnUCxQfOVE8abByEJs9zPsxAaHiQs0nH0bwRps=",
+  "ctsProfileMatch":false,
+  "extension":"CcmOud4/walT",
+  "apkCertificateDigestSha256":["9mLFS3eHWOBcHlA4MmODmfGvzgkbg2YSQ2z/ww9lCfw="],
+  "basicIntegrity":false
 }
 ```
 
-## Step3.
-I run this app on a real device and the nox monitor, I got two different JWS responses.
+## Step4. Verify JWS response (optional)
+- Finish Step1 first.
+- **You can skip this step if you don't verify your attestation response with google APIs. Or you can also validate the SSL certificate chain by yourself. Google highly recommends you to check your JWS statement.**
+- **What "Android Device Verification API" dose is only checking the JWS signature, its response has nothing to do with the Android environments in which your apps run. (The JSON payload)**
+- [AndroidDeviceVerifier]
 
-- On my mobile phone, ctsProfileMatch and basicIntegrity were true.
-```JSON
-{"nonce":"XYFykVQX2mNyVDYZa4YAu8gBP6/3XWqg+zloYjhrg9M=",
-"timestampMs":1498718050630,
-"apkPackageName":"com.catherine.securitysample",
-"apkDigestSha256":"dDUhx9ODbLHNYxN8Is+1RX/9RWhQ3FwCpRWLHFP5Qp8=",
-"ctsProfileMatch":true,
-"extension":"CXGWLc3ajPR5",
-"apkCertificateDigestSha256":["9mLFS3eHWOBcHlA4MmODmfGvzgkbg2YSQ2z/ww9lCfw="],
-"basicIntegrity":true}​
-```
-
-- On nox monitor, ctsProfileMatch and basicIntegrity were false.
-```JSON
-{"nonce":"3QVAX20nI/uir405vctoInSvgYYudRUFts7gLDDGCxE=​",
-"timestampMs":1498718484795​,
-"apkPackageName":"com.catherine.securitysample",
-"apkDigestSha256":"dDUhx9ODbLHNYxN8Is+1RX/9RWhQ3FwCpRWLHFP5Qp8=",
-"ctsProfileMatch":false,
-"extension":"CXGWLc3ajPR5",
-"apkCertificateDigestSha256":["9mLFS3eHWOBcHlA4MmODmfGvzgkbg2YSQ2z/ww9lCfw="],
-"basicIntegrity":false}​​
-```
+## Step5. Back to your application
+- Post the JWS payload to your server, let server tells your app what's next.
 
 If you want to read more about google security services for Android, you can watch [Google Security Services for Android : Mobile Protections at Google Scale], the youtube video. Or you could see my note [README_cn], they are almost the same.
 
-# Warning
+# Warnings
 When you add new secret keys, you must refill modulus, exponent and the other encrypted keys, because you get different RSA KeyPair(private key and public key) every execution.
 
 # License
@@ -251,3 +295,5 @@ the License.
 [safetynethelper]:<https://github.com/scottyab/safetynethelper>
 [Google Security Services for Android : Mobile Protections at Google Scale]:<https://www.youtube.com/watch?v=exU1f_UBXGk>
 [README_cn]:<https://github.com/Catherine22/SecuritySample/blob/master/README_cn.md>     
+[AndroidDeviceVerifier]: <https://github.com/Catherine22/SecuritySample/blob/master/app/src/main/java/com/catherine/securitysample/AndroidDeviceVerifier.java>
+[SafetyNetUtils]: <https://github.com/Catherine22/SecuritySample/blob/master/app/src/main/java/com/catherine/securitysample/SafetyNetUtils.java>
