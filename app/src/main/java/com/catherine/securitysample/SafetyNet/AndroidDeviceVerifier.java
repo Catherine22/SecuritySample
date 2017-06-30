@@ -15,6 +15,7 @@ import java.net.URL;
 import javax.net.ssl.HttpsURLConnection;
 
 /**
+ * Copied from https://github.com/scottyab/safetynethelper
  * Validates the result with Android Device Verification API.
  * <p>
  * Note: This only validates that the provided JWS (JSON Web Signature) message was received from the actual SafetyNet service.

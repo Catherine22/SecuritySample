@@ -292,8 +292,7 @@ the License.
 [Android.mk]:<https://github.com/Catherine22/SecuritySample/blob/master/app/src/main/jni/Android.mk>     
 [Application.mk]:<https://github.com/Catherine22/SecuritySample/blob/master/app/src/main/jni/Application.mk>
 [NDK1]: https://github.com/Catherine22/MobileManager/blob/master/jni1.png  
-[safetynethelper]:<https://github.com/scottyab/safetynethelper>
 [Google Security Services for Android : Mobile Protections at Google Scale]:<https://www.youtube.com/watch?v=exU1f_UBXGk>
 [README_cn]:<https://github.com/Catherine22/SecuritySample/blob/master/README_cn.md>     
-[AndroidDeviceVerifier]: <https://github.com/Catherine22/SecuritySample/blob/master/app/src/main/java/com/catherine/securitysample/AndroidDeviceVerifier.java>
-[SafetyNetUtils]: <https://github.com/Catherine22/SecuritySample/blob/master/app/src/main/java/com/catherine/securitysample/SafetyNetUtils.java>
+[AndroidDeviceVerifier]: <https://github.com/Catherine22/SecuritySample/blob/master/app/src/main/java/com/catherine/securitysample/SafetyNet/AndroidDeviceVerifier.java>
+[SafetyNetUtils]: <https://github.com/Catherine22/SecuritySample/blob/master/app/src/main/java/com/catherine/securitysample/SafetyNet/SafetyNetUtils.java>
