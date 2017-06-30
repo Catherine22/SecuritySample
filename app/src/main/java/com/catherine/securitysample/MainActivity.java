@@ -9,8 +9,8 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.catherine.securitysample.SafetyNet.SafetyNetHelper;
-import com.catherine.securitysample.SafetyNet.SafetyNetResponse;
+import com.catherine.securitysample.SafetyNet.AttestationResult;
+import com.catherine.securitysample.SafetyNet.ErrorMessage;
 import com.catherine.securitysample.SafetyNet.SafetyNetUtils;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
@@ -25,7 +25,6 @@ public class MainActivity extends Activity implements SafetyNetUtils.Callback {
     private TextView tv;
     private JNIHelper jniHelper;
     private SafetyNetUtils snu;
-    private SafetyNetHelper safetyNetHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,23 +62,10 @@ public class MainActivity extends Activity implements SafetyNetUtils.Callback {
                         }
                         break;
                     case 1:
-                        snu.verifyAppsNew();
+                        snu.verifyApps();
                         break;
                     case 2:
-                        safetyNetHelper.enableConnectToGoogleServer(false);
-                        safetyNetHelper.requestTest(MainActivity.this, new SafetyNetHelper.SafetyNetWrapperCallback() {
-                            @Override
-                            public void error(int errorCode, String errorMessage) {
-                                Log.e(TAG, errorCode + ":" + errorMessage);
-                                tv.setText(format(safetyNetHelper.getLastResponse()));
-                            }
-
-                            @Override
-                            public void success(boolean ctsProfileMatch, boolean basicIntegrity) {
-                                Log.d(TAG, "SafetyNet req success: ctsProfileMatch:" + ctsProfileMatch + " and basicIntegrity, " + basicIntegrity);
-                                tv.setText(format(safetyNetHelper.getLastResponse()));
-                            }
-                        });
+                        snu.requestAttestation(true);
                         break;
                 }
             }
@@ -88,8 +74,7 @@ public class MainActivity extends Activity implements SafetyNetUtils.Callback {
     }
 
     private void initComponent() {
-        snu = new SafetyNetUtils(MainActivity.this, MainActivity.this);
-        safetyNetHelper = new SafetyNetHelper(BuildConfig.API_KEY);
+        snu = new SafetyNetUtils(MainActivity.this, BuildConfig.API_KEY, MainActivity.this);
         jniHelper = new JNIHelper();
         Log.d(TAG, "AndroidAPIKEY: " + Utils.getSigningKeyFingerprint(this) + ";" + getPackageName());
         if (ConnectionResult.SUCCESS != GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(this)) {
@@ -98,7 +83,7 @@ public class MainActivity extends Activity implements SafetyNetUtils.Callback {
         }
     }
 
-    private String format(SafetyNetResponse r) {
+    private String format(AttestationResult r) {
         StringBuilder sb = new StringBuilder();
         sb.append("[");
         for (String s : r.getApkCertificateDigestSha256()) {
@@ -123,5 +108,10 @@ public class MainActivity extends Activity implements SafetyNetUtils.Callback {
     @Override
     public void onResponse(String message) {
         tv.setText(message);
+    }
+
+    @Override
+    public void onFail(ErrorMessage errorMessage, String message) {
+        tv.setText("Error:" + message);
     }
 }

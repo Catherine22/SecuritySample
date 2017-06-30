@@ -11,15 +11,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URL;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 
 import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
 
 /**
  * Validates the result with Android Device Verification API.
@@ -58,23 +51,6 @@ public class AndroidDeviceVerifier {
         task.execute();
     }
 
-    /**
-     * Provide the trust managers for the URL connection. By Default this uses the system defaults plus the GoogleApisTrustManager (SSL pinning)
-     *
-     * @return array of TrustManager including system defaults plus the GoogleApisTrustManager (SSL pinning)
-     * @throws KeyStoreException
-     * @throws NoSuchAlgorithmException
-     */
-    protected TrustManager[] getTrustManagers() throws KeyStoreException, NoSuchAlgorithmException {
-        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-        //init with the default system trustmanagers
-        trustManagerFactory.init((KeyStore) null);
-        TrustManager[] defaultTrustManagers = trustManagerFactory.getTrustManagers();
-        TrustManager[] trustManagers = Arrays.copyOf(defaultTrustManagers, defaultTrustManagers.length + 1);
-        //add our Google APIs pinning TrustManager for extra security
-        trustManagers[defaultTrustManagers.length] = new GoogleApisTrustManager();
-        return trustManagers;
-    }
 
 
     private class AndroidDeviceVerifierTask extends AsyncTask<Void, Void, Boolean> {
@@ -89,12 +65,7 @@ public class AndroidDeviceVerifier {
             try {
                 URL verifyApiUrl = new URL(GOOGLE_VERIFICATION_URL + apiKey);
 
-                SSLContext sslContext = SSLContext.getInstance("TLS");
-                sslContext.init(null, getTrustManagers(), null);
-
                 HttpsURLConnection urlConnection = (HttpsURLConnection) verifyApiUrl.openConnection();
-                urlConnection.setSSLSocketFactory(sslContext.getSocketFactory());
-
                 urlConnection.setRequestMethod("POST");
                 urlConnection.setRequestProperty("Content-Type", "application/json");
 
@@ -116,6 +87,7 @@ public class AndroidDeviceVerifier {
                     sb.append(line);
                 }
                 String response = sb.toString();
+                Log.d(TAG, "response:" + response);
                 JSONObject responseRoot = new JSONObject(response);
                 if (responseRoot.has("isValidSignature")) {
                     return responseRoot.getBoolean("isValidSignature");
