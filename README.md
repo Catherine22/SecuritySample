@@ -130,12 +130,12 @@ public native String[] getAuthChain(String key);
 2. JWS (JSON Web Token) contains the signature and the body, your environment information is refer to the body (or the payload data).
 3. There are two APIs you might need - SafetyNet API and Android device verification API. You get your device and app information with SafetyNet API, and check whether the information is truthful with another. Then let your server decide the next step (like shutting down the app or something).
 
-## Step1. Get API keys from google develop console (optional)
+## Step1. Generate an API key from google developers console (optional)
 - **You can skip this step if you don't verify your attestation response with google APIs. Or you can also validate the SSL certificate chain by yourself. Google highly recommends you to check your JWS statement.**
 - **What "Android Device Verification API" dose is only checking the JWS signature, its response has nothing to do with the Android environments in which your apps run. (The JSON payload)**
-- General API key here: https://console.developers.google.com/, and don't forget to add and enable "Android Device Verification API".
+- Get your API key here: https://console.developers.google.com/, and don't forget to add and enable "Android Device Verification API".
 - Make sure the API key you post to "Android Device Verification API" is unrestricted.
-- There are daily quotas of "Android Device Verification API".
+- There are daily quotas of connecting "Android Device Verification API".
 
 - In gradle.porpeties, add your google API key
 ```
