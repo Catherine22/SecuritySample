@@ -181,11 +181,11 @@ public native String[] getKeyParams();
 > Learn more about JWS : https://tools.ietf.org/html/rfc7515
 
 ## Step1. Generate an API key from google developers console (optional)
-- **You can skip this step if you don't verify your attestation response with google APIs. Or you can also validate the SSL certificate chain by yourself. Google highly recommends you to check your JWS statement.**
-- **What "Android Device Verification API" dose is only checking the JWS signature, its response has nothing to do with the Android environments in which your apps run. (The JSON payload)**
+- **You can skip this step if you don't verify your attestation response from google APIs. Or you can also validate the SSL certificate chain by yourself. Google highly recommends you to check your JWS statement.**
+- **What "Android Device Verification API" dose is only checking the JWS certificates and the signature, its response has nothing to do with the Android environments in which your apps run. (The JSON payload)**
 - Get your API key here: https://console.developers.google.com/, and don't forget to add and enable "Android Device Verification API".
 - Make sure the API key you post to "Android Device Verification API" is unrestricted.
-- There are daily quotas of connecting "Android Device Verification API".
+- There is a daily quota restriction of connecting "Android Device Verification API".
 
 - In gradle.porpeties, add your google API key
 ```
@@ -306,9 +306,9 @@ The JWS payloads I got by running this app on the real device and the nox monito
 
 ## Step4. Verify JWS response (optional)
 - Finish Step1 first.
-- **You can skip this step if you don't verify your attestation response with google APIs. Or you can also validate the SSL certificate chain by yourself. Google highly recommends you to check your JWS statement.**
-- **What "Android Device Verification API" dose is only checking the JWS signature, its response has nothing to do with the Android environments in which your apps run. (The JSON payload)**
-- I call google api until daily queries exceeds the quota limit . Then I verify the JWS certificates and the signature by myself. Here is a sample [AttestationAsyncTask].
+- **You can skip this step if you don't verify your attestation response from google APIs. Or you can also validate the SSL certificate chain by yourself. Google highly recommends you to check your JWS statement.**
+- **What "Android Device Verification API" dose is only checking the JWS certificates and the signature, its response has nothing to do with the Android environments in which your apps run. (The JSON payload)**
+- I make my app call this API until daily queries exceeds the quota limit . Then I verify the JWS certificates and the signature by myself. Here is a sample [AttestationAsyncTask].
 
 >Follow these steps to verify the origin of the JWS message:
 >1. Extract the SSL certificate chain from the JWS message.
