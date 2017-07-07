@@ -25,10 +25,6 @@ import javax.crypto.NoSuchPaddingException;
  */
 
 public class JNIHelper {
-    private final static String TAG = "JNIHelper";
-    private final static String MODULUS = "AKfszhN0I/O12wcJ+r4wX0Im//5+pGeSFCXo4jOH18khVsspwgDaZgUJRxYIeK87kDOmk8U1j01Rsx2UFlThMjfwT9oliR1K/QihIujN7dgLSnBHh8wWXBI+P+hZq01uF2qrvWZQ+t2JySVBh7DO9uXxdjHrOLou97w3pjZzU4zn";
-    private final static String EXPONENT = "AQAB";
-
     static {
         //relate to LOCAL_MODULE in Android.mk
         System.loadLibrary("keys");
@@ -49,13 +45,13 @@ public class JNIHelper {
      * @throws InvalidKeySpecException
      * @throws ClassNotFoundException
      */
-    public static String decryptRSA(String message) throws NoSuchAlgorithmException, NoSuchPaddingException,
+    public String decryptRSA(String message) throws NoSuchAlgorithmException, NoSuchPaddingException,
             InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException,
             InvalidAlgorithmParameterException, ClassNotFoundException, InvalidKeySpecException {
         Cipher c2 = Cipher.getInstance(Algorithm.rules.get("RSA")); // 创建一个Cipher对象，注意这里用的算法需要和Key的算法匹配
 
-        BigInteger m = new BigInteger(Base64.decode(MODULUS.getBytes(), Base64.DEFAULT));
-        BigInteger e = new BigInteger(Base64.decode(EXPONENT.getBytes(), Base64.DEFAULT));
+        BigInteger m = new BigInteger(Base64.decode(getKeyParams()[0].getBytes(), Base64.DEFAULT));
+        BigInteger e = new BigInteger(Base64.decode(getKeyParams()[1].getBytes(), Base64.DEFAULT));
         c2.init(Cipher.DECRYPT_MODE, convertStringToPublicKey(m, e)); // 设置Cipher为解密工作模式，需要把Key传进去
         byte[] decryptedData = c2.doFinal(Base64.decode(message.getBytes(), Base64.DEFAULT));
         return new String(decryptedData, Algorithm.CHARSET);
@@ -73,7 +69,7 @@ public class JNIHelper {
      * @throws NoSuchAlgorithmException
      * @throws InvalidKeySpecException
      */
-    public static Key convertStringToPublicKey(BigInteger modulus, BigInteger exponent)
+    private Key convertStringToPublicKey(BigInteger modulus, BigInteger exponent)
             throws ClassNotFoundException, NoSuchAlgorithmException, InvalidKeySpecException {
         byte[] modulusByteArry = modulus.toByteArray();
         byte[] exponentByteArry = exponent.toByteArray();
@@ -84,8 +80,6 @@ public class JNIHelper {
         // 根据RSAPublicKeySpec对象获取公钥对象
         KeyFactory kFactory = KeyFactory.getInstance(Algorithm.KEYPAIR_ALGORITHM);
         PublicKey publicKey = kFactory.generatePublic(rsaPublicKeySpec);
-        // System.out.println("==>public key: " +
-        // bytesToHexString(publicKey.getEncoded()));
         return publicKey;
     }
 
@@ -95,5 +89,9 @@ public class JNIHelper {
      */
     public native String[] getAuthChain(String key);
 
-
+    /**
+     * A native method that is implemented by the 'native-lib' native library,
+     * which is packaged with this application.
+     */
+    public native String[] getKeyParams();
 }

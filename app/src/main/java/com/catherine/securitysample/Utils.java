@@ -35,24 +35,6 @@ public class Utils {
     /**
      * Created SHA256 of input
      *
-     * @param input (assumes UTF-8 string)
-     * @return
-     */
-    public static byte[] hash(String input) {
-        if (!TextUtils.isEmpty(input)) {
-            try {
-                byte[] inputBytes = input.getBytes("UTF-8");
-                return hash(inputBytes);
-            } catch (UnsupportedEncodingException e) {
-                Log.e(TAG, "problem hashing \"" + input + "\" " + e.getMessage(), e);
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Created SHA256 of input
-     *
      * @param input
      * @return
      */
@@ -88,7 +70,7 @@ public class Utils {
 
 
     /**
-     * Gets the encoded representation of the first signing cerificated used to sign current APK
+     * Gets the encoded representation of the first signing certificated used to sign current APK
      *
      * @param ctx
      * @return
@@ -191,9 +173,8 @@ public class Utils {
         return null;
     }
 
-    public static final int BUFFER_SIZE = 2048;
-
-    public static byte[] getDigest(InputStream in, String algorithm) throws Throwable {
+    private static byte[] getDigest(InputStream in, String algorithm) throws Throwable {
+        int BUFFER_SIZE = 2048;
         MessageDigest md = MessageDigest.getInstance(algorithm);
         try {
             DigestInputStream dis = new DigestInputStream(in, md);

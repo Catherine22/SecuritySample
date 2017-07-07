@@ -68,4 +68,7 @@ dependencies {
     compile 'com.android.support:appcompat-v7:25.3.1'
     compile 'com.google.android.gms:play-services-safetynet:11.0.1'
     testCompile 'junit:junit:4.12'
+    compile files('src/main/libs/bcmail-jdk15on-1.54.jar')
+    compile files('src/main/libs/bcprov-jdk15on-1.54.jar')
+    compile files('src/main/libs/commons-codec-1.7.jar')
 }

@@ -1,4 +1,4 @@
-package com.catherine.securitysample.SafetyNet;
+package com.catherine.securitysample.safety_net;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -9,6 +9,7 @@ import android.util.Log;
 
 import com.catherine.securitysample.Utils;
 import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
@@ -33,13 +34,11 @@ public class SafetyNetUtils {
     private final static String TAG = "SafetyNetUtils";
     private Context ctx;
     private Callback callback;
-    private String API_KEY;
     private final SecureRandom secureRandom;
     private GoogleApiClient googleApiClient;
 
     public SafetyNetUtils(Context ctx, @Nullable String API_KEY, Callback callback) {
         this.ctx = ctx;
-        this.API_KEY = API_KEY;
         this.callback = callback;
         googleApiClient = new GoogleApiClient.Builder(ctx)
                 .addApi(SafetyNet.API)
@@ -57,6 +56,8 @@ public class SafetyNetUtils {
     }
 
     public void verifyApps() {
+        if (!isGooglePlayServicesAvailable()) return;
+
         final StringBuilder sb = new StringBuilder();
         SafetyNet.getClient(ctx)
                 .isVerifyAppsEnabled()
@@ -139,6 +140,7 @@ public class SafetyNetUtils {
     }
 
     public void requestAttestation(final boolean verifyJWSResponse) {
+        if (!isGooglePlayServicesAvailable()) return;
         Log.d(TAG, String.format("ApkCertificateDigests:%s", Utils.calcApkCertificateDigests(ctx, ctx.getPackageName())));
         Log.d(TAG, String.format("ApkDigest:%s", Utils.calcApkDigest(ctx)));
         Log.v(TAG, "running SafetyNet.API Test");
@@ -156,37 +158,47 @@ public class SafetyNetUtils {
                         else {
                             try {
                                 final String jwsResult = attestationResult.getJwsResult();
-                                final AttestationResult response = new AttestationResult(jwsResult);
+                                final JwsHelper jwsHelper = new JwsHelper(jwsResult);
+                                final AttestationResult response = new AttestationResult(jwsHelper.getDecodedPayload());
                                 if (!verifyJWSResponse) {
                                     callback.onResponse(response.getFormattedString());
                                 } else {
-                                    if (API_KEY == null)
-                                        callback.onFail(ErrorMessage.NULL_API_KEY, ErrorMessage.NULL_API_KEY.name());
-                                    else {
-                                        AndroidDeviceVerifier androidDeviceVerifier = new AndroidDeviceVerifier(API_KEY, jwsResult);
-                                        androidDeviceVerifier.verify(new AndroidDeviceVerifier.AndroidDeviceVerifierCallback() {
-                                            @Override
-                                            public void error(String errorMsg) {
-                                                callback.onFail(ErrorMessage.FAILED_TO_CALL_GOOGLE_API_SERVICES, ErrorMessage.FAILED_TO_CALL_GOOGLE_API_SERVICES.name() + ":" + errorMsg);
-                                            }
-
-                                            @Override
-                                            public void success(boolean isValidSignature) {
-                                                if (isValidSignature)
-                                                    callback.onResponse("isValidSignature true\n\n" + response.getFormattedString());
-                                                else
-                                                    callback.onFail(ErrorMessage.ERROR_VALID_SIGNATURE, ErrorMessage.ERROR_VALID_SIGNATURE.name());
-                                            }
-                                        });
+                                    try {
+                                        Thread.sleep(500);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
                                     }
+                                    AndroidDeviceVerifier androidDeviceVerifier = new AndroidDeviceVerifier(ctx, jwsResult);
+                                    androidDeviceVerifier.verify(new AttestationTaskCallback() {
+                                        @Override
+                                        public void error(String errorMsg) {
+                                            callback.onFail(ErrorMessage.FAILED_TO_CALL_GOOGLE_API_SERVICES, errorMsg);
+                                        }
+
+                                        @Override
+                                        public void success(boolean isValidSignature) {
+                                            if (isValidSignature)
+                                                callback.onResponse("isValidSignature true\n\n" + response.getFormattedString());
+                                            else
+                                                callback.onFail(ErrorMessage.ERROR_VALID_SIGNATURE, ErrorMessage.ERROR_VALID_SIGNATURE.name());
+                                        }
+                                    });
                                 }
                             } catch (JSONException e) {
                                 callback.onFail(ErrorMessage.EXCEPTION, e.getMessage());
-
                             }
                         }
                     }
                 });
+    }
+
+    private boolean isGooglePlayServicesAvailable() {
+        if (ConnectionResult.SUCCESS != GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(ctx)) {
+            Log.e(TAG, "GooglePlayServices is not available on this device.\n\nAttestation is not available.");
+            callback.onFail(ErrorMessage.GOOGLE_PLAY_SERVICES_UNAVAILABLE, "GooglePlayServices is not available on this device.\n\nAttestation is not available.");
+            return false;
+        } else
+            return true;
     }
 
     private byte[] generateOneTimeRequestNonce() {

@@ -13,34 +13,75 @@ Using SafetyNet Attestation API.
 ## Part2. Assess the security and compatibility of the Android environments in which your apps run
 - Call SafetyNet Attestation API.
 
-# Instruction Part1
+# Instructions Part1
 
 ## Step1. Generate a pair of RSA keys and encrypt your message.
 Running [RSAHelper] to get encrypted messages, a pair of RSA modulus and exponent for decryption.
 
 ## Step2. Fill in MODULUS and EXPONENT
-In [JNIHelper]
+Hide RSA parameters in [Config.cpp]
 
-```Java
-private final static String MODULUS = "Fill in the modulus created by RSAHelper";
-private final static String EXPONENT = "Fill in the exponent created by RSAHelper";
+```C
+JNIEXPORT jobjectArray JNICALL
+Java_com_catherine_securitysample_JNIHelper_getKeyParams(JNIEnv *env, jobject instance) {
+    jobjectArray valueArray = (jobjectArray) env->NewObjectArray(2, env->FindClass("java/lang/String"), 0);
+    const char *hash[2];
+    //MODULUS
+    hash[0] = "Fill in the modulus created by RSAHelper";
+    //EXPONENT
+    hash[1] = "Fill in the exponent created by RSAHelper";
+    for (int i = 0; i < 2; i++) {
+        jstring value = env->NewStringUTF(hash[i]);
+        env->SetObjectArrayElement(valueArray, i, value);
+    }
+    return valueArray;
+}
 ```
 
 ## Step3. Add the decryption method to your project
+In [JNIHelper],
+
 ```Java
-public static String decryptRSA(String message) throws NoSuchAlgorithmException, NoSuchPaddingException,
+/**
+ * Decrypt messages by RSA algorithm<br>
+ *
+ * @param message
+ * @return Original message
+ * @throws NoSuchAlgorithmException
+ * @throws NoSuchPaddingException
+ * @throws InvalidKeyException
+ * @throws IllegalBlockSizeException
+ * @throws BadPaddingException
+ * @throws UnsupportedEncodingException
+ * @throws InvalidAlgorithmParameterException
+ * @throws InvalidKeySpecException
+ * @throws ClassNotFoundException
+ */
+public String decryptRSA(String message) throws NoSuchAlgorithmException, NoSuchPaddingException,
         InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException,
         InvalidAlgorithmParameterException, ClassNotFoundException, InvalidKeySpecException {
     Cipher c2 = Cipher.getInstance(Algorithm.rules.get("RSA")); // 创建一个Cipher对象，注意这里用的算法需要和Key的算法匹配
 
-    BigInteger m = new BigInteger(Base64.decode(MODULUS.getBytes(), Base64.DEFAULT));
-    BigInteger e = new BigInteger(Base64.decode(EXPONENT.getBytes(), Base64.DEFAULT));
+    BigInteger m = new BigInteger(Base64.decode(getKeyParams()[0].getBytes(), Base64.DEFAULT));
+    BigInteger e = new BigInteger(Base64.decode(getKeyParams()[1].getBytes(), Base64.DEFAULT));
     c2.init(Cipher.DECRYPT_MODE, convertStringToPublicKey(m, e)); // 设置Cipher为解密工作模式，需要把Key传进去
     byte[] decryptedData = c2.doFinal(Base64.decode(message.getBytes(), Base64.DEFAULT));
     return new String(decryptedData, Algorithm.CHARSET);
 }
 
-public static Key convertStringToPublicKey(BigInteger modulus, BigInteger exponent)
+/**
+ * You can component a publicKey by a specific pair of values - modulus and
+ * exponent.
+ *
+ * @param modulus  When you generate a new RSA KeyPair, you'd get a PrivateKey, a
+ *                 modulus and an exponent.
+ * @param exponent When you generate a new RSA KeyPair, you'd get a PrivateKey, a
+ *                 modulus and an exponent.
+ * @throws ClassNotFoundException
+ * @throws NoSuchAlgorithmException
+ * @throws InvalidKeySpecException
+ */
+private Key convertStringToPublicKey(BigInteger modulus, BigInteger exponent)
         throws ClassNotFoundException, NoSuchAlgorithmException, InvalidKeySpecException {
     byte[] modulusByteArry = modulus.toByteArray();
     byte[] exponentByteArry = exponent.toByteArray();
@@ -51,8 +92,6 @@ public static Key convertStringToPublicKey(BigInteger modulus, BigInteger expone
     // 根据RSAPublicKeySpec对象获取公钥对象
     KeyFactory kFactory = KeyFactory.getInstance(Algorithm.KEYPAIR_ALGORITHM);
     PublicKey publicKey = kFactory.generatePublic(rsaPublicKeySpec);
-    // System.out.println("==>public key: " +
-    // bytesToHexString(publicKey.getEncoded()));
     return publicKey;
 }
 ```
@@ -73,7 +112,7 @@ externalNativeBuild {
 }
 ```
 
-- In MainActivity
+- In [JNIHelper],
 
 ```Java
 static {
@@ -85,6 +124,12 @@ static {
  * which is packaged with this application.
  */
 public native String[] getAuthChain(String key);
+
+/**
+ * A native method that is implemented by the 'native-lib' native library,
+ * which is packaged with this application.
+ */
+public native String[] getKeyParams();
 ```
 
 ## Step4. Run your app
@@ -124,11 +169,16 @@ public native String[] getAuthChain(String key);
 }
 ```
 
-# Instruction Part2
+# Instructions Part2
 **Things you must know before you start developing.**
 1. Use SafetyNetApi the deprecated class or you'd probably get 403 error by calling SafetyNet.getClient(context)
-2. JWS (JSON Web Token) contains the signature and the body, your environment information is refer to the body (or the payload data).
+2. JWS (JSON Web Token) contains header, payload and signature, your environment information is refer to the payload.
 3. There are two APIs you might need - SafetyNet API and Android device verification API. You get your device and app information with SafetyNet API, and check whether the information is truthful with another. Then let your server decide the next step (like shutting down the app or something).
+
+>JWS Header : A string representing a JSON object that describes the digital signature or MAC operation applied to create the JWS Signature value.
+>JWS Payload : The bytes to be secured -- a.k.a., the message. The payload can contain an arbitrary sequence of bytes.
+>JWS Signature : A byte array containing the cryptographic material that secures the JWS Header and the JWS Payload.
+> Learn more about JWS : https://tools.ietf.org/html/rfc7515
 
 ## Step1. Generate an API key from google developers console (optional)
 - **You can skip this step if you don't verify your attestation response with google APIs. Or you can also validate the SSL certificate chain by yourself. Google highly recommends you to check your JWS statement.**
@@ -174,7 +224,6 @@ googleApiClient.connect();
 
 ```Java
 byte[] requestNonce = generateOneTimeRequestNonce();
-Log.d(TAG, "Nonce:" + Base64.encodeToString(requestNonce, Base64.DEFAULT));
 SafetyNet.SafetyNetApi.attest(googleApiClient, requestNonce)
         .setResultCallback(new ResultCallback<SafetyNetApi.AttestationResult>() {
 
@@ -187,33 +236,34 @@ SafetyNet.SafetyNetApi.attest(googleApiClient, requestNonce)
                 else {
                     try {
                         final String jwsResult = attestationResult.getJwsResult();
-                        final AttestationResult response = new AttestationResult(jwsResult);
+                        final JwsHelper jwsHelper = new JwsHelper(jwsResult);
+                        final AttestationResult response = new AttestationResult(jwsHelper.getDecodedPayload());
                         if (!verifyJWSResponse) {
                             callback.onResponse(response.getFormattedString());
                         } else {
-                            if (API_KEY == null)
-                                callback.onFail(ErrorMessage.NULL_API_KEY, ErrorMessage.NULL_API_KEY.name());
-                            else {
-                                AndroidDeviceVerifier androidDeviceVerifier = new AndroidDeviceVerifier(API_KEY, jwsResult);
-                                androidDeviceVerifier.verify(new AndroidDeviceVerifier.AndroidDeviceVerifierCallback() {
-                                    @Override
-                                    public void error(String errorMsg) {
-                                        callback.onFail(ErrorMessage.FAILED_TO_CALL_GOOGLE_API_SERVICES, ErrorMessage.FAILED_TO_CALL_GOOGLE_API_SERVICES.name() + ":" + errorMsg);
-                                    }
-
-                                    @Override
-                                    public void success(boolean isValidSignature) {
-                                        if (isValidSignature)
-                                            callback.onResponse("isValidSignature true\n\n" + response.getFormattedString());
-                                        else
-                                            callback.onFail(ErrorMessage.ERROR_VALID_SIGNATURE, ErrorMessage.ERROR_VALID_SIGNATURE.name());
-                                    }
-                                });
+                            try {
+                                Thread.sleep(500);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
                             }
+                            AndroidDeviceVerifier androidDeviceVerifier = new AndroidDeviceVerifier(ctx, jwsResult);
+                            androidDeviceVerifier.verify(new AttestationTaskCallback() {
+                                @Override
+                                public void error(String errorMsg) {
+                                    callback.onFail(ErrorMessage.FAILED_TO_CALL_GOOGLE_API_SERVICES, errorMsg);
+                                }
+
+                                @Override
+                                public void success(boolean isValidSignature) {
+                                    if (isValidSignature)
+                                        callback.onResponse("isValidSignature true\n\n" + response.getFormattedString());
+                                    else
+                                        callback.onFail(ErrorMessage.ERROR_VALID_SIGNATURE, ErrorMessage.ERROR_VALID_SIGNATURE.name());
+                                }
+                            });
                         }
                     } catch (JSONException e) {
                         callback.onFail(ErrorMessage.EXCEPTION, e.getMessage());
-
                     }
                 }
             }
@@ -221,6 +271,7 @@ SafetyNet.SafetyNetApi.attest(googleApiClient, requestNonce)
 ```
 
 - [SafetyNetUtils]
+> Learn more about JWS : https://tools.ietf.org/html/rfc7515
 
 ## Step3. Call Attestation API to retrieve JWS message
 The JWS payloads I got by running this app on the real device and the nox monitor are a little different.
@@ -257,15 +308,26 @@ The JWS payloads I got by running this app on the real device and the nox monito
 - Finish Step1 first.
 - **You can skip this step if you don't verify your attestation response with google APIs. Or you can also validate the SSL certificate chain by yourself. Google highly recommends you to check your JWS statement.**
 - **What "Android Device Verification API" dose is only checking the JWS signature, its response has nothing to do with the Android environments in which your apps run. (The JSON payload)**
-- [AndroidDeviceVerifier]
+- I call google api until daily queries exceeds the quota limit . Then I verify the JWS certificates and the signature by myself. Here is a sample [AttestationAsyncTask].
+
+>Follow these steps to verify the origin of the JWS message:
+>1. Extract the SSL certificate chain from the JWS message.
+>2. Validate the SSL certificate chain and use SSL hostname matching to verify that the leaf certificate was issued to the hostname attest.android.com.
+>3. Use the certificate to verify the signature of the JWS message.
+
 
 ## Step5. Back to your application
-- Post the JWS payload to your server, let server tells your app what's next.
+- Post the JWS payload to your server to check the payload and return commands to your app.
 
 If you want to read more about google security services for Android, you can watch [Google Security Services for Android : Mobile Protections at Google Scale], the youtube video. Or you could see my note [README_cn], they are almost the same.
 
 # Warnings
 When you add new secret keys, you must refill modulus, exponent and the other encrypted keys, because you get different RSA KeyPair(private key and public key) every execution.
+
+## Reference
+- [Server Authentication During SSL Handshake]
+- [Verifying a Certificate Chain]
+- [JSON Web Signature (JWS) draft-jones-json-web-signature-01]
 
 # License
 
@@ -287,12 +349,19 @@ the License.
 
 [RSAHelper]:<https://github.com/Catherine22/RSAHelper>
 [MainActivity]: <https://github.com/Catherine22/SecuritySample/blob/master/app/src/main/java/com/catherine/securitysample/MainActivity.java>
+[Config.cpp]: <https://github.com/Catherine22/SecuritySample/blob/master/app/src/main/jni/Config.cpp>
 [JNIHelper]: <https://github.com/Catherine22/SecuritySample/blob/master/app/src/main/java/com/catherine/securitysample/JNIHelper.java>
-[SafetyNet]: <https://github.com/Catherine22/SecuritySample/blob/master/app/src/main/java/com/catherine/securitysample/SafetyNet>
+[SafetyNet]: <https://github.com/Catherine22/SecuritySample/blob/master/app/src/main/java/com/catherine/securitysample/safety_net>
 [Android.mk]:<https://github.com/Catherine22/SecuritySample/blob/master/app/src/main/jni/Android.mk>     
 [Application.mk]:<https://github.com/Catherine22/SecuritySample/blob/master/app/src/main/jni/Application.mk>
 [NDK1]: https://github.com/Catherine22/MobileManager/blob/master/jni1.png  
 [Google Security Services for Android : Mobile Protections at Google Scale]:<https://www.youtube.com/watch?v=exU1f_UBXGk>
 [README_cn]:<https://github.com/Catherine22/SecuritySample/blob/master/README_cn.md>     
-[AndroidDeviceVerifier]: <https://github.com/Catherine22/SecuritySample/blob/master/app/src/main/java/com/catherine/securitysample/SafetyNet/AndroidDeviceVerifier.java>
-[SafetyNetUtils]: <https://github.com/Catherine22/SecuritySample/blob/master/app/src/main/java/com/catherine/securitysample/SafetyNet/SafetyNetUtils.java>
+[AndroidDeviceVerifier]: <https://github.com/Catherine22/SecuritySample/blob/master/app/src/main/java/com/catherine/securitysample/safety_net/AndroidDeviceVerifier.java>  
+[AttestationAsyncTask]: <https://github.com/Catherine22/SecuritySample/blob/master/app/src/main/java/com/catherine/securitysample/safety_net/AttestationAsyncTask.java>
+[SafetyNetUtils]: <https://github.com/Catherine22/SecuritySample/blob/master/app/src/main/java/com/catherine/securitysample/safety_net/SafetyNetUtils.java>
+
+
+[Server Authentication During SSL Handshake]:<https://docs.oracle.com/cd/E19693-01/819-0997/aakhc/index.html>
+[Verifying a Certificate Chain]:<https://docs.oracle.com/cd/E19316-01/820-2765/gdzea/index.html>
+[JSON Web Signature (JWS) draft-jones-json-web-signature-01]:<http://self-issued.info/docs/draft-jones-json-web-signature-01.html>
