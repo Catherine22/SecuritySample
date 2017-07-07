@@ -45,10 +45,10 @@ public class CertificatesManager {
      * 4. 证书自己的格式通用为X.509，但是证书文件的格式却有很多。不同的系统可能支持不同的证书文件。
      *
      * @throws CertificateException
-     * @throws FileNotFoundException
+     * @throws IOException
      */
     public static void printCertificatesInfo(X509Certificate cf)
-            throws CertificateException, FileNotFoundException, IOException {
+            throws CertificateException, IOException {
 
         Log.d(TAG, "证书序列号:" + cf.getSerialNumber());
         Log.d(TAG, "版本:" + cf.getVersion());
@@ -66,9 +66,10 @@ public class CertificatesManager {
             }
         } else
             su.append("null");
-        Log.d(TAG, String.format("主体:[唯一标识符:%s, 通用名称:%s, 机构单元名称:%s, 机构名:%s, 地理位置:%s, 州/省名:%s, 国名:%s]", su,
-                subjectDN.getOrDefault("CN", ""), subjectDN.getOrDefault("OU", ""), subjectDN.getOrDefault("O", ""),
-                subjectDN.getOrDefault("L", ""), subjectDN.getOrDefault("ST", ""), subjectDN.getOrDefault("C", "")));
+        Log.d(TAG, "主体" + subjectDN);
+//        Log.d(TAG, String.format("主体:[唯一标识符:%s, 通用名称:%s, 机构单元名称:%s, 机构名:%s, 地理位置:%s, 州/省名:%s, 国名:%s]", su,
+//                subjectDN.getOrDefault("CN", ""), subjectDN.getOrDefault("OU", ""), subjectDN.getOrDefault("O", ""),
+//                subjectDN.getOrDefault("L", ""), subjectDN.getOrDefault("ST", ""), subjectDN.getOrDefault("C", "")));
 
         Map<String, String> issuerDN = refactorDN(cf.getIssuerDN().getName());
 
@@ -81,9 +82,10 @@ public class CertificatesManager {
             }
         } else
             i.append("null");
-        Log.d(TAG, String.format("签发者:[唯一标识符:%s, 通用名称:%s, 机构单元名称:%s, 机构名:%s, 地理位置:%s, 州/省名:%s, 国名:%s]", i,
-                issuerDN.getOrDefault("CN", ""), issuerDN.getOrDefault("OU", ""), issuerDN.getOrDefault("O", ""),
-                issuerDN.getOrDefault("L", ""), issuerDN.getOrDefault("ST", ""), issuerDN.getOrDefault("C", "")));
+        Log.d(TAG, "签发者" + issuerDN);
+//        Log.d(TAG, String.format("签发者:[唯一标识符:%s, 通用名称:%s, 机构单元名称:%s, 机构名:%s, 地理位置:%s, 州/省名:%s, 国名:%s]", i,
+//                issuerDN.getOrDefault("CN", ""), issuerDN.getOrDefault("OU", ""), issuerDN.getOrDefault("O", ""),
+//                issuerDN.getOrDefault("L", ""), issuerDN.getOrDefault("ST", ""), issuerDN.getOrDefault("C", "")));
 
         Log.d(TAG, "签名算法:" + cf.getSigAlgName());
         Log.d(TAG, String.format("签名算法OID:%s (%s)", cf.getSigAlgOID(), OIDMap.getName(cf.getSigAlgOID())));
@@ -173,8 +175,9 @@ public class CertificatesManager {
             cert.checkValidity();// Certificate is active for current date
 
             // 2. Is the issuing CA a trusted CA?
-            if (!cert.getIssuerDN().getName().equals(KeySet.TRUSTED_CA)) {
-                Log.d(TAG, "This certificate published by a untrusted CA.");
+            Map<String, String> issuerDN = refactorDN(cert.getIssuerDN().getName());
+            if (!KeySet.TRUSTED_CA.trim().equals(issuerDN.get("CN").trim())) {
+                Log.e(TAG, "This certificate published by a untrusted CA. ");
                 return false;
             }
 
@@ -187,32 +190,32 @@ public class CertificatesManager {
             CertificateExtensionsHelper coarseGrainedExtensions = new CertificateExtensionsHelper(cert);
 
             if (!coarseGrainedExtensions.getDNSNames().contains(KeySet.TRUSTED_SSL_HOSTNAME))
-                Log.d(TAG, "Untruthed domain name:" + coarseGrainedExtensions.getDNSNames());
+                Log.d(TAG, "Untrusted domain name:" + coarseGrainedExtensions.getDNSNames());
 
             return true;
         } catch (CertificateExpiredException e) {
-            Log.d(TAG, "Certificate is expired");
+            Log.e(TAG, "Certificate is expired");
             e.printStackTrace();
         } catch (CertificateNotYetValidException e) {
-            Log.d(TAG, "Certificate is not yet valid.");
+            Log.e(TAG, "Certificate is not yet valid.");
             e.printStackTrace();
         } catch (InvalidKeyException e) {
-            Log.d(TAG, "InvalidKeyException on incorrect key.");
+            Log.e(TAG, "InvalidKeyException on incorrect key.");
             e.printStackTrace();
         } catch (CertificateException e) {
-            Log.d(TAG, "CertificateException on encoding errors.");
+            Log.e(TAG, "CertificateException on encoding errors.");
             e.printStackTrace();
         } catch (NoSuchAlgorithmException e) {
-            Log.d(TAG, "NoSuchProviderException if there's no default provider.");
+            Log.e(TAG, "NoSuchProviderException if there's no default provider.");
             e.printStackTrace();
         } catch (NoSuchProviderException e) {
-            Log.d(TAG, "NoSuchProviderException if there's no default provider.");
+            Log.e(TAG, "NoSuchProviderException if there's no default provider.");
             e.printStackTrace();
         } catch (SignatureException e) {
-            Log.d(TAG, "SignatureException on signature errors.");
+            Log.e(TAG, "SignatureException on signature errors.");
             e.printStackTrace();
         } catch (IOException e) {
-            Log.d(TAG, "Failed to read certificate");
+            Log.e(TAG, "Failed to read certificate");
             e.printStackTrace();
         }
         return false;
@@ -220,7 +223,7 @@ public class CertificatesManager {
 
     private static Map<String, String> refactorDN(String name) {
         Map<String, String> map = new HashMap<>();
-        String[] pairs = name.split(", ");
+        String[] pairs = name.split(",");
         for (int i = 0; i < pairs.length; i++) {
             String pair = pairs[i];
             String[] keyValue = pair.split("=");

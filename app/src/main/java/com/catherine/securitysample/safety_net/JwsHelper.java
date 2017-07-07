@@ -1,5 +1,6 @@
 package com.catherine.securitysample.safety_net;
 
+import android.os.Environment;
 import android.util.Base64;
 
 import com.catherine.securitysample.certificate.CertificatesManager;
@@ -8,7 +9,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Signature;
@@ -29,6 +33,22 @@ public class JwsHelper {
     private String decodedHeader;
 
     public JwsHelper(String jws) {
+        try {
+            String path = "/SecuritySample/data/";
+            File dir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + path);
+            if (!dir.exists())
+                dir.mkdirs();
+
+            File file = new File(dir, "jws.dat");
+            FileOutputStream fos = new FileOutputStream(file);
+            fos.write(jws.getBytes());
+            fos.flush();
+            fos.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         this.jws = jws.split("\\.");
         decodedHeader = new String(Base64.decode(this.jws[0], Base64.DEFAULT));
     }
@@ -84,7 +104,7 @@ public class JwsHelper {
         try {
             Signature sig = Signature.getInstance(alg);
             sig.initVerify(getX5CCertificates().get(0));
-            byte[] signature = org.apache.commons.codec.binary.Base64.decodeBase64(getSignature());
+            byte[] signature = Base64.decode(getSignature(), Base64.URL_SAFE);
             String content = jws[0] + "." + jws[1];
             sig.update(content.getBytes());
             return sig.verify(signature);

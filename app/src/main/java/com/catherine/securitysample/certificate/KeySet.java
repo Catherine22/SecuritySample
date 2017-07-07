@@ -7,7 +7,7 @@ package com.catherine.securitysample.certificate;
  */
 
 public class KeySet {
-    public final static String TRUSTED_CA = "CN=Google Internet Authority G2, O=Google Inc, C=US";
+    public final static String TRUSTED_CA = "Google Internet Authority G2";
     public final static String GIAG2_URL = "http://pki.google.com/GIAG2.crt";
     public final static String TRUSTED_SSL_HOSTNAME = "attest.android.com";
 }

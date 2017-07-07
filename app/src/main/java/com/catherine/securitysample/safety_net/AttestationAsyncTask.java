@@ -89,9 +89,34 @@ public class AttestationAsyncTask extends AsyncTask<String, Void, Boolean> {
                 String response = sb.toString();
                 Log.d(TAG, "response:" + response);
                 JSONObject responseRoot = new JSONObject(response);
-                if (responseRoot.has("isValidSignature") && responseRoot.getBoolean("isValidSignature"))
-                    return true;
-                else {
+                if (responseRoot.optBoolean("isValidSignature", false)) {
+                    JwsHelper jwsHelper = new JwsHelper(jws);
+                    AttestationResult result = new AttestationResult(jwsHelper.getDecodedPayload());
+                    Log.d(TAG, result.toString());
+
+                    List<X509Certificate> certs = jwsHelper.getX5CCertificates();
+                    X509Certificate rootCert = CertificatesManager.downloadCaIssuersCert(KeySet.GIAG2_URL);
+
+                    // Just verify one of the certificates which is belonged to "attest.android.com" in this case.
+                    boolean isJwsHeaderLegal = false;
+                    for (X509Certificate cert : certs) {
+                        boolean isValid = CertificatesManager.validate(cert, rootCert);
+                        CertificatesManager.printCertificatesInfo(cert);
+                        if (isValid == true)
+                            isJwsHeaderLegal = true;
+                    }
+
+                    // Verify the signature of JWS
+                    boolean isJwsSignatureLegal = jwsHelper.verifySignature(Algorithm.ALG_SHA256_WITH_RSA);
+                    Log.d(TAG, isJwsHeaderLegal + "," + isJwsSignatureLegal);
+                    if (isJwsHeaderLegal && isJwsSignatureLegal) {
+                        Log.d(TAG, "Android attestation JWS 通過驗證！");
+                        return true;
+                    } else {
+                        Log.d(TAG, "Android attestation JWS 驗證失败！");
+                        return false;
+                    }
+                } else {
                     errorMessage = "Error JSON response.";
                     return false;
                 }
@@ -133,12 +158,13 @@ public class AttestationAsyncTask extends AsyncTask<String, Void, Boolean> {
 
                         // Verify the signature of JWS
                         boolean isJwsSignatureLegal = jwsHelper.verifySignature(Algorithm.ALG_SHA256_WITH_RSA);
-                        if (isJwsHeaderLegal && isJwsSignatureLegal)
+                        if (isJwsHeaderLegal && isJwsSignatureLegal) {
                             Log.d(TAG, "Android attestation JWS 通過驗證！");
-                        else
+                            return true;
+                        } else {
                             Log.d(TAG, "Android attestation JWS 驗證失败！");
-
-                        return true;
+                            return false;
+                        }
                     }
                 }
                 return false;

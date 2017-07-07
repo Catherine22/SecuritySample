@@ -17,7 +17,6 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-
 /**
  * Created by Catherine on 2017/6/29.
  * Soft-World Inc.
@@ -48,6 +47,7 @@ public class JNIHelper {
     public String decryptRSA(String message) throws NoSuchAlgorithmException, NoSuchPaddingException,
             InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException,
             InvalidAlgorithmParameterException, ClassNotFoundException, InvalidKeySpecException {
+
         Cipher c2 = Cipher.getInstance(Algorithm.rules.get("RSA")); // 创建一个Cipher对象，注意这里用的算法需要和Key的算法匹配
 
         BigInteger m = new BigInteger(Base64.decode(getKeyParams()[0].getBytes(), Base64.DEFAULT));

@@ -32,6 +32,10 @@ android {
                 cppFlags ""
             }
         }
+        //JavaVersion.VERSION_1_8
+        jackOptions {
+            enabled true
+        }
     }
     buildTypes {
         release {
@@ -50,8 +54,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_7
-        targetCompatibility JavaVersion.VERSION_1_7
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
     sourceSets { main { jni.srcDirs = ['src/main/jni', 'src/main/jni/'] } }
 
@@ -70,5 +74,4 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile files('src/main/libs/bcmail-jdk15on-1.54.jar')
     compile files('src/main/libs/bcprov-jdk15on-1.54.jar')
-    compile files('src/main/libs/commons-codec-1.7.jar')
 }
