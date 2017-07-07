@@ -9,14 +9,11 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.catherine.securitysample.SafetyNet.AttestationResult;
-import com.catherine.securitysample.SafetyNet.ErrorMessage;
-import com.catherine.securitysample.SafetyNet.SafetyNetUtils;
+import com.catherine.securitysample.safety_net.ErrorMessage;
+import com.catherine.securitysample.safety_net.SafetyNetUtils;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 
-import java.text.SimpleDateFormat;
-import java.util.Locale;
 
 public class MainActivity extends Activity implements SafetyNetUtils.Callback {
     private final String[] titles = {"Get encrypted data via NDK", "Verify apps", "Attestation"};
@@ -43,7 +40,7 @@ public class MainActivity extends Activity implements SafetyNetUtils.Callback {
                             String[] authChain = jniHelper.getAuthChain("LOGIN");
                             sb.append("Decrypted secret keys\n[ ");
                             for (int i = 0; i < authChain.length; i++) {
-                                sb.append(JNIHelper.decryptRSA(authChain[i]));
+                                sb.append(jniHelper.decryptRSA(authChain[i]));
                                 sb.append(" ");
                             }
                             sb.append("]\n");
@@ -78,23 +75,9 @@ public class MainActivity extends Activity implements SafetyNetUtils.Callback {
         jniHelper = new JNIHelper();
         Log.d(TAG, "AndroidAPIKEY: " + Utils.getSigningKeyFingerprint(this) + ";" + getPackageName());
         if (ConnectionResult.SUCCESS != GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(this)) {
-            Log.e(TAG, "GooglePlayServices is not available on this device.\n\nThis SafetyNet test will not work");
-            tv.setText("GooglePlayServices is not available on this device.\n\nThis SafetyNet test will not work");
+            Log.e(TAG, "GooglePlayServices is not available on this device.\n\nAttestation is not available.");
+            tv.setText("GooglePlayServices is not available on this device.\n\nAttestation is not available.");
         }
-    }
-
-    private String format(AttestationResult r) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("[");
-        for (String s : r.getApkCertificateDigestSha256()) {
-            sb.append(s);
-            sb.append(", ");
-        }
-        sb.delete(sb.length() - 2, sb.length());
-        sb.append("]");
-        SimpleDateFormat newFormat = new SimpleDateFormat("yyyy/MM/dd hh:mm:ss", Locale.TAIWAN);
-        String formattedTime = newFormat.format(r.getTimestampMs());
-        return String.format("Request Time:\n%s\n\nNonce:\n%s\n\nPackageName:\n%s\n\nApkCertificateDigestSha256:\n%s\n\nApkDigestSha256:\n%s\n\nctsProfileMatch:\n%s\n\nbasicIntegrity:\n%s", formattedTime, r.getNonce(), r.getApkPackageName(), sb.toString(), r.getApkDigestSha256(), r.isCtsProfileMatch(), r.isBasicIntegrity());
     }
 
 
