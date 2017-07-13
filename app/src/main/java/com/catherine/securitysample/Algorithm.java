@@ -10,6 +10,9 @@ import java.util.Map;
  */
 
 public class Algorithm {
+    public final static String SHA1 = "SHA1";
+    public final static String SHA256 = "SHA256";
+    public final static String MD5 = "MD5";
     public final static String CHARSET = "UTF8";
     /**
      * 在Android平台的JCE中，非对称Key的常用算法有“RSA”、“DSA”、“Diffie−Hellman”、“Elliptic Curve
@@ -23,7 +26,9 @@ public class Algorithm {
      */
     public final static String ALG_MD5_WITH_RSA = "MD5withRSA";
     public final static String ALG_SHA256_WITH_RSA = "SHA256withRSA";
-    public final static Map<String, String> rules = new HashMap<>();;
+    public final static Map<String, String> rules = new HashMap<>();
+    ;
+
     static {
         rules.put("DES", "DES/CBC/PKCS5Padding");
         rules.put("RSA", "RSA/ECB/PKCS1Padding");

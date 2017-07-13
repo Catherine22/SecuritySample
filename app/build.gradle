@@ -45,6 +45,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
         debug {
+            signingConfig signingConfigs.config
             manifestPlaceholders = [safetynet_api_key: "${safetynet_api_key}"]
         }
     }

@@ -55,11 +55,11 @@ public class Utils {
         return null;
     }
 
-    public static String getSigningKeyFingerprint(Context ctx) {
+    public static String getSigningKeyFingerprint(Context ctx, String alg) {
         String result = null;
         try {
             byte[] certEncoded = getSigningKeyCertificate(ctx);
-            MessageDigest md = MessageDigest.getInstance("SHA1");
+            MessageDigest md = MessageDigest.getInstance(alg);
             byte[] publicKey = md.digest(certEncoded);
             result = byte2HexFormatted(publicKey);
         } catch (Exception e) {
@@ -90,7 +90,6 @@ public class Utils {
                 CertificateFactory cf = CertificateFactory.getInstance("X509");
                 X509Certificate c = (X509Certificate) cf.generateCertificate(input);
                 return c.getEncoded();
-
             }
         } catch (Exception e) {
             Log.w(TAG, e);
@@ -112,7 +111,7 @@ public class Utils {
     }
 
     public static List<String> calcApkCertificateDigests(Context context, String packageName) {
-        List<String> encodedSignatures = new ArrayList<String>();
+        List<String> encodedSignatures = new ArrayList<>();
 
         // Get signatures from package manager
         PackageManager pm = context.getPackageManager();
