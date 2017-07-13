@@ -59,14 +59,16 @@ nonce就是token，自己的服务器提供或是从装置随机生成。<br>
 client：呼叫API就行了，取得JWS结果，并传送给自己的server。<br>
 server：检查SSL的证书链（根证书是不是来自官方或可信任机构的），检查用来签名JWS的证书。<br>
 
-**JWS栏位说明**<br>
+**JWS payload栏位说明**<br>
 nonce：client随机生成或是来自自己服务器的token，用来当作此次操作的id。<br>
 timestamp：呼叫该API的时间戳。<br>
 apkPackageName：apk的包名（这个正在跟服务器沟通的是不是自己的应用）。<br>
-apkCertificateDigestSHA256：打包apk的keystore的信息摘要值（这个apk是不是我本人发布的）。<br>
+apkCertificateDigestSHA256：打包apk的签名值，也就是keystore内涵的证书信息摘要值（这个apk是不是我本人发布的）。<br>
 apkDigestSHA256：apk的hash值。（这个apk有没有被篡改过）。<br>
 ctsProfileMatch：这个装置是不是真正的、可信任的装置。<br>
 basicIntegrity：过滤条件略比ctsProfileMatch宽容，告诉你这个装置是否兼容Android的，有没有被篡改过。
+
+>没有证书的apk，android系统是无法安装的。而打包apk时，会自动夹带包含公钥信息的证书（把这个证书做信息摘要得到MD5、SHA1、SHA256的值，也就是“指纹”），至于这个值为啥是数值而不是一个值是因为一个apk可以有多个签名。
 
 **实测数据**<br>
 运行于LG Pro2得JWS为：*<br>
