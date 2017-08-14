@@ -132,7 +132,7 @@ public native String[] getAuthChain(String key);
 public native String[] getKeyParams();
 ```
 
-## Step4. Run your app
+## Step5. Run your app
 
 ```Java
     private final static String TAG = "MainActivity";
