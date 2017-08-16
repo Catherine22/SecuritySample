@@ -15,6 +15,15 @@ Using SafetyNet Attestation API.
 
 # Instructions Part1
 
+In the begining, you might need to create a keystore.properties file to keep some information you need.
+
+```
+storeFile=/Users//Keystores/xxx.jks
+storePassword=xxxx
+keyAlias=xxxx
+keyPassword=xxxx
+```
+
 ## Step1. Generate a pair of RSA keys and encrypt your message.
 Running [RSAHelper] to get encrypted messages, a pair of RSA modulus and exponent for decryption.
 
@@ -170,10 +179,21 @@ public native String[] getKeyParams();
 ```
 
 # Instructions Part2
+
+In the begining, you might need to create a keystore.properties file to keep some information you need.
+
+```
+storeFile=/Users//Keystores/xxx.jks
+storePassword=xxxx
+keyAlias=xxxx
+keyPassword=xxxx
+```
+
 **Things you must know before you start developing.**
 1. Use SafetyNetApi the deprecated class or you'd probably get 403 error by calling SafetyNet.getClient(context)
 2. JWS (JSON Web Token) contains header, payload and signature, your environment information is refer to the payload.
 3. There are two APIs you might need - SafetyNet API and Android device verification API. You get your device and app information with SafetyNet API, and check whether the information is truthful with another. Then let your server decide the next step (like shutting down the app or something).
+4. Attestation should not run on your UI thread, you can use HandlerThread to deal with this situation.
 
 >JWS Header : A string representing a JSON object that describes the digital signature or MAC operation applied to create the JWS Signature value.
 >JWS Payload : The bytes to be secured -- a.k.a., the message. The payload can contain an arbitrary sequence of bytes.
@@ -211,12 +231,38 @@ android {
 
 
 ## Step2. Build GoogleApiClient and call SafetyNet APIs
+
+In MyApplication,
+```java
+public class MyApplication extends Application {
+    public HandlerThread safetyNetLooper;
+    public static MyApplication INSTANCE;
+
+    @Override
+    public void onCreate() {
+        INSTANCE = this;
+        safetyNetLooper = new HandlerThread("SafetyNet task");
+        safetyNetLooper.start();
+        super.onCreate();
+    }
+}
+```
+
+In manifest,
+```xml
+<application
+    android:name=".MyApplication">
+</application>
+```
+
 ```java
 SafetyNetHelper safetyNetHelper = new SafetyNetHelper(BuildConfig.API_KEY);
+Handler handler = new Handler(MyApplication.INSTANCE.safetyNetLooper.getLooper());
 GoogleApiClient googleApiClient = new GoogleApiClient.Builder(contex)
         .addApi(SafetyNet.API)
         .addConnectionCallbacks(googleApiConnectionCallbacks)
         .addOnConnectionFailedListener(googleApiConnectionFailedListener)
+        .setHandler(handler) //Run on a new thread
         .build();
 //Don't forget to connect!
 googleApiClient.connect();
