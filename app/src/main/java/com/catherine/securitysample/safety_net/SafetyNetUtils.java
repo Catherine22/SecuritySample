@@ -2,10 +2,13 @@ package com.catherine.securitysample.safety_net;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.support.annotation.Nullable;
 import android.util.Base64;
 import android.util.Log;
 
+import com.catherine.securitysample.MyApplication;
 import com.catherine.securitysample.Utils;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
@@ -36,6 +39,7 @@ public class SafetyNetUtils {
     public SafetyNetUtils(Context ctx, Callback callback) {
         this.ctx = ctx;
         this.callback = callback;
+
         GoogleApiClient.OnConnectionFailedListener googleApiConnectionFailedListener = connectionResult -> Log.e(TAG, "onConnectionFailed:" + connectionResult.toString());
         GoogleApiClient.ConnectionCallbacks googleApiConnectionCallbacks = new GoogleApiClient.ConnectionCallbacks() {
             @Override
@@ -49,10 +53,14 @@ public class SafetyNetUtils {
                 Log.d(TAG, "onConnectionSuspended" + i);
             }
         };
+
+
+        Handler handler = new Handler(MyApplication.INSTANCE.safetyNetLooper.getLooper());
         googleApiClient = new GoogleApiClient.Builder(ctx)
                 .addApi(SafetyNet.API)
                 .addConnectionCallbacks(googleApiConnectionCallbacks)
                 .addOnConnectionFailedListener(googleApiConnectionFailedListener)
+                .setHandler(handler) //Run on a new thread
                 .build();
         googleApiClient.connect();
         secureRandom = new SecureRandom();

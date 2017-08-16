@@ -41,12 +41,12 @@ android {
         release {
             minifyEnabled false
             signingConfig signingConfigs.config
-            manifestPlaceholders = [safetynet_api_key: "${safetynet_api_key}"]
+//            manifestPlaceholders = [safetynet_api_key: "${safetynet_api_key}"]
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
         debug {
             signingConfig signingConfigs.config
-            manifestPlaceholders = [safetynet_api_key: "${safetynet_api_key}"]
+//            manifestPlaceholders = [safetynet_api_key: "${safetynet_api_key}"]
         }
     }
     externalNativeBuild {
@@ -61,7 +61,7 @@ android {
     sourceSets { main { jni.srcDirs = ['src/main/jni', 'src/main/jni/'] } }
 
     defaultConfig {
-        buildConfigField("String", "API_KEY", "\"${safetynet_api_key}\"")
+        buildConfigField("String", "API_KEY", "\"Input your API_KEY here\"")
     }
 }
 
