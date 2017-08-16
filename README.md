@@ -286,17 +286,18 @@ SafetyNet.SafetyNetApi.attest(googleApiClient, requestNonce)
                         final AttestationResult response = new AttestationResult(jwsHelper.getDecodedPayload());
                         if (!verifyJWSResponse) {
                             callback.onResponse(response.getFormattedString());
+                            
+                            //release SafetyNet HandlerThread
+                            MyApplication.INSTANCE.safetyNetLooper.quit();
                         } else {
-                            try {
-                                Thread.sleep(500);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
                             AndroidDeviceVerifier androidDeviceVerifier = new AndroidDeviceVerifier(ctx, jwsResult);
                             androidDeviceVerifier.verify(new AttestationTaskCallback() {
                                 @Override
                                 public void error(String errorMsg) {
                                     callback.onFail(ErrorMessage.FAILED_TO_CALL_GOOGLE_API_SERVICES, errorMsg);
+                                    
+                                    //release SafetyNet HandlerThread
+                                    MyApplication.INSTANCE.safetyNetLooper.quit();
                                 }
 
                                 @Override
@@ -305,11 +306,17 @@ SafetyNet.SafetyNetApi.attest(googleApiClient, requestNonce)
                                         callback.onResponse("isValidSignature true\n\n" + response.getFormattedString());
                                     else
                                         callback.onFail(ErrorMessage.ERROR_VALID_SIGNATURE, ErrorMessage.ERROR_VALID_SIGNATURE.name());
+                                
+                                    //release SafetyNet HandlerThread
+                                    MyApplication.INSTANCE.safetyNetLooper.quit();
                                 }
                             });
                         }
                     } catch (JSONException e) {
                         callback.onFail(ErrorMessage.EXCEPTION, e.getMessage());
+                        
+                        //release SafetyNet HandlerThread
+                        MyApplication.INSTANCE.safetyNetLooper.quit();
                     }
                 }
             }
