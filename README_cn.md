@@ -85,12 +85,12 @@ basicIntegrity：过滤条件略比ctsProfileMatch宽容，告诉你这个装置
 
 运行于nox模拟器，所得JWS为：*<br>
 ```JSON
-{"nonce":"3QVAX20nI/uir405vctoInSvgYYudRUFts7gLDDGCxE=",
+{"nonce":"HztEc5uqQnc2pPvPaykoxMr4A/vwUIp78jtfHcySkdw=",
 "timestampMs":1498718484795,
 "apkPackageName":"com.catherine.securitysample",
 "apkDigestSha256":"dDUhx9ODbLHNYxN8Is+1RX/9RWhQ3FwCpRWLHFP5Qp8=",
 "ctsProfileMatch":false,
-"extension":"CXGWLc3ajPR5",
+"extension":"CWpLMVqyWbBZ",
 "apkCertificateDigestSha256":["9mLFS3eHWOBcHlA4MmODmfGvzgkbg2YSQ2z/ww9lCfw="],
 "basicIntegrity":false}
 ```
