@@ -343,16 +343,16 @@ The JWS payloads I got by running this app on the real device and the nox monito
 
 ```
 
-- On nox monitor, ctsProfileMatch and basicIntegrity were both false.
+- On a rooted one, ctsProfileMatch and basicIntegrity were both false.
 ```JSON
 {
-  "nonce":"/Md+iYxxW14bSMFFdN6rosLSINPTIvuhv12GJMgeP08=",
-  "timestampMs":1498814181775,
-  "apkPackageName":"com.catherine.securitysample",
-  "apkDigestSha256":"+9Ql8SnUCxQfOVE8abByEJs9zPsxAaHiQs0nH0bwRps=",
+  "nonce":"FWypInssEmM+YBl61JCVPFx+bC5naGuIPQhkP3ait68=",
+  "timestampMs":1502958413970,
+  "apkPackageName":"",
+  "apkDigestSha256":"",
   "ctsProfileMatch":false,
-  "extension":"CcmOud4/walT",
-  "apkCertificateDigestSha256":["9mLFS3eHWOBcHlA4MmODmfGvzgkbg2YSQ2z/ww9lCfw="],
+  "extension":"CdVwxgDa4bqk",
+  "apkCertificateDigestSha256":"",
   "basicIntegrity":false
 }
 ```
