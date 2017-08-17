@@ -120,6 +120,10 @@ public class AttestationAsyncTask extends AsyncTask<String, Void, Boolean> {
                     errorMessage = "Error JSON response.";
                     return false;
                 }
+            } else if (status == 400) {
+                Log.e(TAG, "error response:400");
+                errorMessage = "Please check your API_KEY in gradle";
+                return false;
             } else {
                 InputStream is = urlConnection.getErrorStream();
                 StringBuilder sb = new StringBuilder();
@@ -130,6 +134,7 @@ public class AttestationAsyncTask extends AsyncTask<String, Void, Boolean> {
                 }
                 String response = sb.toString();
                 Log.e(TAG, "error response:" + response);
+
                 JSONObject responseRoot = new JSONObject(response);
                 JSONObject responseBody = responseRoot.getJSONObject("error");
                 errorMessage = responseBody.optString("message", "error");

@@ -1,4 +1,5 @@
 package com.catherine.securitysample.safety_net;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -19,11 +20,11 @@ public class AttestationResult {
     private long timestampMs;
 
     private String nonce;
-
+    //It could be null
     private String apkDigestSha256;
-
+    //It could be null
     private String[] apkCertificateDigestSha256;
-
+    //It could be null
     private String apkPackageName;
 
     private String extension;
@@ -81,13 +82,15 @@ public class AttestationResult {
 
     public String getFormattedString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("[");
-        for (String s : getApkCertificateDigestSha256()) {
-            sb.append(s);
-            sb.append(", ");
+        if (getApkCertificateDigestSha256().length > 0) {
+            sb.append("[");
+            for (String s : getApkCertificateDigestSha256()) {
+                sb.append(s);
+                sb.append(", ");
+            }
+            sb.delete(sb.length() - 2, sb.length());
+            sb.append("]");
         }
-        sb.delete(sb.length() - 2, sb.length());
-        sb.append("]");
         SimpleDateFormat newFormat = new SimpleDateFormat(
                 "yyyy/MM/dd hh:mm:ss", Locale.TAIWAN);
         String formattedTime = newFormat.format(getTimestampMs());
@@ -101,13 +104,15 @@ public class AttestationResult {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("[");
-        for (String s : getApkCertificateDigestSha256()) {
-            sb.append(s);
-            sb.append(", ");
+        if (getApkCertificateDigestSha256().length > 0) {
+            sb.append("[");
+            for (String s : getApkCertificateDigestSha256()) {
+                sb.append(s);
+                sb.append(", ");
+            }
+            sb.delete(sb.length() - 2, sb.length());
+            sb.append("]");
         }
-        sb.delete(sb.length() - 2, sb.length());
-        sb.append("]");
         return "Attestation [ctsProfileMatch = " + ctsProfileMatch
                 + ", basicIntegrity = " + basicIntegrity + ", timestampMs = "
                 + timestampMs + ", nonce = " + nonce + ", apkDigestSha256 = "
