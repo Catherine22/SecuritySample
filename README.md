@@ -6,7 +6,7 @@ Hiding encrypted secret API keys in C/C++ code and decrypting them via JNI.
 
 Using SafetyNet Attestation APIs.
 
->SafetyNet is a nitty solution in the following scenarios:      
+>SafetyNet is a nifty solution in the following scenarios:      
 >1. I'm not sure if the app which is connecting to my server is that app I published.
 >2. Can I trust this Android API?       
 >3. Is this a real, compatible device?      
