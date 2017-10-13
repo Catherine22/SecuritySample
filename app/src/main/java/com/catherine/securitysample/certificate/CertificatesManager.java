@@ -67,9 +67,9 @@ public class CertificatesManager {
         } else
             su.append("null");
         Log.d(TAG, "主体" + subjectDN);
-//        Log.d(TAG, String.format("主体:[唯一标识符:%s, 通用名称:%s, 机构单元名称:%s, 机构名:%s, 地理位置:%s, 州/省名:%s, 国名:%s]", su,
-//                subjectDN.getOrDefault("CN", ""), subjectDN.getOrDefault("OU", ""), subjectDN.getOrDefault("O", ""),
-//                subjectDN.getOrDefault("L", ""), subjectDN.getOrDefault("ST", ""), subjectDN.getOrDefault("C", "")));
+        Log.d(TAG, String.format("主体:[唯一标识符:%s, 通用名称:%s, 机构单元名称:%s, 机构名:%s, 地理位置:%s, 州/省名:%s, 国名:%s]", su,
+                subjectDN.get("CN"), subjectDN.get("OU"), subjectDN.get("O"),
+                subjectDN.get("L"), subjectDN.get("ST"), subjectDN.get("C")));
 
         Map<String, String> issuerDN = refactorDN(cf.getIssuerDN().getName());
 
@@ -83,9 +83,9 @@ public class CertificatesManager {
         } else
             i.append("null");
         Log.d(TAG, "签发者" + issuerDN);
-//        Log.d(TAG, String.format("签发者:[唯一标识符:%s, 通用名称:%s, 机构单元名称:%s, 机构名:%s, 地理位置:%s, 州/省名:%s, 国名:%s]", i,
-//                issuerDN.getOrDefault("CN", ""), issuerDN.getOrDefault("OU", ""), issuerDN.getOrDefault("O", ""),
-//                issuerDN.getOrDefault("L", ""), issuerDN.getOrDefault("ST", ""), issuerDN.getOrDefault("C", "")));
+        Log.d(TAG, String.format("签发者:[唯一标识符:%s, 通用名称:%s, 机构单元名称:%s, 机构名:%s, 地理位置:%s, 州/省名:%s, 国名:%s]", i,
+                issuerDN.get("CN"), issuerDN.get("OU"), issuerDN.get("O"),
+                issuerDN.get("L"), issuerDN.get("ST"), issuerDN.get("C")));
 
         Log.d(TAG, "签名算法:" + cf.getSigAlgName());
         Log.d(TAG, String.format("签名算法OID:%s (%s)", cf.getSigAlgOID(), OIDMap.getName(cf.getSigAlgOID())));
@@ -115,18 +115,22 @@ public class CertificatesManager {
     }
 
     /**
-     * 字串转X509证书
+     * PEM格式字串转X509证书
+     * <p>
+     * -----BEGIN CERTIFICATE-----
+     * xxx
+     * -----END CERTIFICATE-----
      *
-     * @param certificates
+     * @param pem
      * @return
      * @throws CertificateException
      * @throws FileNotFoundException
      */
-    public static X509Certificate getX509Certificate(String certificates)
+    public static X509Certificate getX509Certificate(String pem)
             throws CertificateException, FileNotFoundException {
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        return (X509Certificate) cf
-                .generateCertificate(new ByteArrayInputStream(Base64.decode(certificates, Base64.DEFAULT)));
+        String newString = pem.replaceAll("-----BEGIN CERTIFICATE-----", "").replaceAll("-----END CERTIFICATE-----", "");
+        return (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(Base64.decode(newString, Base64.DEFAULT)));
     }
 
     /**
@@ -227,7 +231,11 @@ public class CertificatesManager {
         for (int i = 0; i < pairs.length; i++) {
             String pair = pairs[i];
             String[] keyValue = pair.split("=");
-            map.put(keyValue[0], keyValue[1]);
+            if (keyValue.length > 1) {
+                map.put(keyValue[0], keyValue[1]);
+            } else {
+                map.put(keyValue[0], "");
+            }
         }
         return map;
     }
