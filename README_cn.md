@@ -68,7 +68,7 @@ apkDigestSHA256：apk的hash值。（这个apk有没有被篡改过）。<br>
 ctsProfileMatch：这个装置是不是真正的、可信任的装置。<br>
 basicIntegrity：过滤条件略比ctsProfileMatch宽容，告诉你这个装置是否兼容Android的，有没有被篡改过。
 
->没有证书的apk，android系统是无法安装的。而打包apk时，会自动夹带包含公钥信息的证书（把这个证书做信息摘要得到MD5、SHA1、SHA256的值，也就是“指纹”），至于这个值为啥是数值而不是一个值是因为一个apk可以有多个签名。
+>没有证书的apk，android系统是无法安装的。而打包apk时，会自动夹带包含公钥信息的证书（把这个证书做信息摘要得到MD5、SHA1、SHA256的值，也就是“指纹”），至于这个值为啥是数组而不是一个值是因为一个apk可以有多个签名。
 
 **实测数据**<br>
 运行于LG Pro2得JWS为：*<br>
