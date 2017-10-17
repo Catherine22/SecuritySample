@@ -12,7 +12,7 @@ Using SafetyNet Attestation APIs.
 >3. Is this a real, compatible device?      
 >4. Whether my application is running on a rooted device or not.
 
-Well, safetyNet APIs are used to evaluate the environment where your app runs is safe and compatible with the Android API. To check the integrity of the app, compatibility and signature. Let your server decides the following step is to continue or stop connecting to untrusted devices immediately.
+Well, safetyNet APIs are used to evaluate if the environment where your app runs is safe and compatible with the Android API or not. To check the integrity, compatibility and signature of your app by calling Attestation APIs. Let your server decide to continue or to stop connecting to that untrusted device immediately.
 
 # Features
 
@@ -212,8 +212,8 @@ keyPassword=xxxx
 > Learn more about JWS : https://tools.ietf.org/html/rfc7515
 
 ## Step1. Generate an API key from google developers console (optional)
-- **You can skip this step if you don't verify your attestation response from google APIs. Or you can also validate the SSL certificate chain by yourself. Google highly recommends you to check your JWS statement.**
-- **What "Android Device Verification API" dose is only checking the JWS certificates and the signature, its response has nothing to do with the Android environments in which your apps run. (The JSON payload)**
+- **You can skip this step if you don't verify your attestation response from google APIs (I feel like this step is kind of like https validation. It probabily means man-in-the-middle attacks are allowed if you do not check the response.). Of course you can also validate the SSL certificate chain by yourself. Google highly recommends you to check your JWS statement.**
+- **What "Android Device Verification API" dose is only checking JWS certificates and signatures. Its response (JSON payload) has nothing to do with the Android environments in which your app run.**
 - Get your API key here: https://console.developers.google.com/, and don't forget to add and enable "Android Device Verification API".
 - Make sure the API key you post to "Android Device Verification API" is unrestricted.
 - There is a daily quota restriction of connecting "Android Device Verification API".
@@ -337,14 +337,15 @@ SafetyNet.SafetyNetApi.attest(googleApiClient, requestNonce)
 - [SafetyNetUtils]
 > Learn more about JWS : https://tools.ietf.org/html/rfc7515
 
-## Step3. Call Attestation API to retrieve JWS message
+## Step3. Call Attestation API to retrieve JWS messages
 The JWS payloads I got by running this app on the real device and the nox monitor are a little different.
 
 - On my mobile phone, ctsProfileMatch and basicIntegrity were both true.
 ```JSON
 {
   "nonce":"pUkGirEXYOQefux33VWeSEmR0kBkLNGQaiQiZvE3VAc=",
-  "timestampMs":1498814112718,"apkPackageName":"com.catherine.securitysample",
+  "timestampMs":1498814112718,
+  "apkPackageName":"com.catherine.securitysample",
   "apkDigestSha256":"FPgrs1x05EaZiJkfKaitzEXTazg+GDDqYtbR5XyJiJE=",
   "ctsProfileMatch":true,
   "extension":"CbRP9k08+pZE",
@@ -368,11 +369,11 @@ The JWS payloads I got by running this app on the real device and the nox monito
 }
 ```
 
-## Step4. Verify JWS response (optional)
-- Finish Step1 first.
-- **You can skip this step if you don't verify your attestation response from google APIs. Or you can also validate the SSL certificate chain by yourself. Google highly recommends you to check your JWS statement.**
-- **What "Android Device Verification API" dose is only checking the JWS certificates and the signature, its response has nothing to do with the Android environments in which your apps run. (The JSON payload)**
-- I make my app call this API until daily queries exceeds the quota limit . Then I verify the JWS certificates and the signature by myself. Here is a sample [AttestationAsyncTask].
+## Step4. Verify your JWS response (optional)
+- First you must finish step1.
+- **You can skip this step if you don't verify your attestation response from google APIs (I feel like this step is kind of like https validation. It probabily means man-in-the-middle attacks are allowed if you do not check the response.). Of course you can also validate the SSL certificate chain by yourself. Google highly recommends you to check your JWS statement.**
+- **What "Android Device Verification API" dose is only checking JWS certificates and signatures. Its response (JSON payload) has nothing to do with the Android environments in which your app run.**
+- I have this app call google Android Device Verification API until daily API queries exceed the quota limit. Then, instead of google server, the JWS response will be verified by devices. Here is a sample [AttestationAsyncTask].
 
 >Follow these steps to verify the origin of the JWS message:
 >1. Extract the SSL certificate chain from the JWS message.
@@ -384,6 +385,10 @@ The JWS payloads I got by running this app on the real device and the nox monito
 - Post the JWS payload to your server to check the payload and return commands to your app.
 
 If you want to read more about google security services for Android, you can watch [Google Security Services for Android : Mobile Protections at Google Scale], the youtube video. Or you could see my note [README_cn], they are almost the same.
+
+Your workflow would be one of them:
+1. (Security risk) Call Attestation APIs → Get a JWS response → Send JWS to your server → ?? - it depends on your server.
+2. (Recommendation) Call Attestation APIs → Get a JWS response → Check the JWS response (step 4) → Send valid JWS to your server → ?? - it depends on your server.
 
 # Warnings
 As you add new secret keys, you must refill modulus, exponent and the other encrypted keys, because you'll get different RSA KeyPair (private key and public key) for every execution.
