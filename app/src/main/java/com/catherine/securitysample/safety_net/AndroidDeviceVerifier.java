@@ -4,8 +4,7 @@ import android.content.Context;
 
 /**
  * Created by Catherine on 2017/7/3.
- * Soft-World Inc.
- * catherine919@soft-world.com.tw
+
  */
 
 public class AndroidDeviceVerifier {

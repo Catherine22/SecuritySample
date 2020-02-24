@@ -9,8 +9,7 @@ import java.util.Locale;
 
 /**
  * Created by Catherine on 2017/6/30.
- * Soft-World Inc.
- * catherine919@soft-world.com.tw
+
  */
 public class AttestationResult {
     private boolean ctsProfileMatch;

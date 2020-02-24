@@ -2,8 +2,7 @@ package com.catherine.securitysample.safety_net;
 
 /**
  * Created by Catherine on 2017/6/30.
- * Soft-World Inc.
- * catherine919@soft-world.com.tw
+
  */
 
 public enum ErrorMessage {

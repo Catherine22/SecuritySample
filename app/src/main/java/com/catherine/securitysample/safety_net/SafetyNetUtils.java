@@ -25,8 +25,7 @@ import java.util.List;
 
 /**
  * Created by Catherine on 2017/6/29.
- * Soft-World Inc.
- * catherine919@soft-world.com.tw
+
  */
 
 public class SafetyNetUtils {

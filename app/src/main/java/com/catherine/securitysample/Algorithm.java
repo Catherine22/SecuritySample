@@ -5,8 +5,7 @@ import java.util.Map;
 
 /**
  * Created by Catherine on 2017/6/23.
- * Soft-World Inc.
- * catherine919@soft-world.com.tw
+
  */
 
 public class Algorithm {

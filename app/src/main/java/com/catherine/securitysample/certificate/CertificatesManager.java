@@ -27,8 +27,6 @@ import java.util.Map;
 
 /**
  * Created by Catherine on 2017/7/7.
- * Soft-World Inc.
- * catherine919@soft-world.com.tw
  */
 
 public class CertificatesManager {

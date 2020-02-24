@@ -27,8 +27,6 @@ import javax.net.ssl.HttpsURLConnection;
 
 /**
  * Created by Catherine on 2017/7/7.
- * Soft-World Inc.
- * catherine919@soft-world.com.tw
  */
 
 public class AttestationAsyncTask extends AsyncTask<String, Void, Boolean> {
@@ -77,7 +75,7 @@ public class AttestationAsyncTask extends AsyncTask<String, Void, Boolean> {
 
             //resp ={ “isValidSignature”: true }
             int status = urlConnection.getResponseCode();
-            Log.d(TAG, "status:" + status);
+            Log.d(TAG, "status: " + status);
             if (status == 200) {
                 InputStream is = urlConnection.getInputStream();
                 StringBuilder sb = new StringBuilder();
@@ -87,7 +85,7 @@ public class AttestationAsyncTask extends AsyncTask<String, Void, Boolean> {
                     sb.append(line);
                 }
                 String response = sb.toString();
-                Log.d(TAG, "response:" + response);
+                Log.d(TAG, "response: " + response);
                 JSONObject responseRoot = new JSONObject(response);
                 if (responseRoot.optBoolean("isValidSignature", false)) {
                     JwsHelper jwsHelper = new JwsHelper(jws);
@@ -110,10 +108,10 @@ public class AttestationAsyncTask extends AsyncTask<String, Void, Boolean> {
                     boolean isJwsSignatureLegal = jwsHelper.verifySignature(Algorithm.ALG_SHA256_WITH_RSA);
                     Log.d(TAG, isJwsHeaderLegal + "," + isJwsSignatureLegal);
                     if (isJwsHeaderLegal && isJwsSignatureLegal) {
-                        Log.d(TAG, "Android attestation JWS 通過驗證！");
+                        Log.d(TAG, "Android attestation JWS: verified!");
                         return true;
                     } else {
-                        Log.d(TAG, "Android attestation JWS 驗證失败！");
+                        Log.d(TAG, "Android attestation JWS: failed to verify.");
                         return false;
                     }
                 } else {
@@ -121,8 +119,8 @@ public class AttestationAsyncTask extends AsyncTask<String, Void, Boolean> {
                     return false;
                 }
             } else if (status == 400) {
-                Log.e(TAG, "error response:400");
-                errorMessage = "Please check your API_KEY in gradle";
+                Log.e(TAG, "error status: 400");
+                errorMessage = "Check your API_KEY in gradle";
                 return false;
             } else {
                 InputStream is = urlConnection.getErrorStream();
@@ -133,7 +131,7 @@ public class AttestationAsyncTask extends AsyncTask<String, Void, Boolean> {
                     sb.append(line);
                 }
                 String response = sb.toString();
-                Log.e(TAG, "error response:" + response);
+                Log.e(TAG, "error response: " + response);
 
                 JSONObject responseRoot = new JSONObject(response);
                 JSONObject responseBody = responseRoot.getJSONObject("error");
@@ -164,10 +162,10 @@ public class AttestationAsyncTask extends AsyncTask<String, Void, Boolean> {
                         // Verify the signature of JWS
                         boolean isJwsSignatureLegal = jwsHelper.verifySignature(Algorithm.ALG_SHA256_WITH_RSA);
                         if (isJwsHeaderLegal && isJwsSignatureLegal) {
-                            Log.d(TAG, "Android attestation JWS 通過驗證！");
+                            Log.d(TAG, "Android attestation JWS: verified!");
                             return true;
                         } else {
-                            Log.d(TAG, "Android attestation JWS 驗證失败！");
+                            Log.d(TAG, "Android attestation JWS: failed to verify.");
                             return false;
                         }
                     }
@@ -175,7 +173,7 @@ public class AttestationAsyncTask extends AsyncTask<String, Void, Boolean> {
                 return false;
             }
         } catch (Exception e) {
-            errorMessage = "problem validating JWS Message :" + e.getMessage();
+            errorMessage = "Exception: " + e.getMessage();
             Log.e(TAG, errorMessage, e);
             return false;
         }

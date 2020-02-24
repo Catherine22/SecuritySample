@@ -19,8 +19,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 /**
  * Created by Catherine on 2017/6/29.
- * Soft-World Inc.
- * catherine919@soft-world.com.tw
+
  */
 
 public class JNIHelper {
